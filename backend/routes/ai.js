@@ -1,12 +1,27 @@
 import express from 'express';
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 
 const router = express.Router();
 
 // Helper to get AI instance safely when the route is called
+// It checks for Groq first, then OpenAI fallback.
 const getAi = () => {
-    if (!process.env.GEMINI_API_KEY) return null;
-    return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    if (process.env.GROQ_API_KEY) {
+        return new OpenAI({
+            apiKey: process.env.GROQ_API_KEY,
+            baseURL: "https://api.groq.com/openai/v1",
+        });
+    } else if (process.env.OPENAI_API_KEY) {
+        return new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+    }
+    return null;
+};
+
+const getModel = () => {
+    // We default to llama 3.3 for Groq and gpt-4o-mini for OpenAI to ensure speed and low cost
+    return process.env.GROQ_API_KEY ? 'llama-3.3-70b-versatile' : 'gpt-4o-mini';
 };
 
 // Helper to safely parse JSON from AI response, stripping markdown formatting if present
@@ -22,13 +37,17 @@ const parseJSONResponse = (text) => {
 router.post('/generate-question', async (req, res) => {
     try {
         const ai = getAi();
-        if (!ai) return res.status(503).json({ error: "AI API key not configured on server" });
-        const { topic, difficulty } = req.body;
+        if (!ai) return res.status(503).json({ error: "AI API key not configured on server. Add GROQ_API_KEY or OPENAI_API_KEY to backend/.env" });
+        const { topic, difficulty, solvedQuestions = [] } = req.body;
+
+        const avoidanceRule = solvedQuestions.length > 0
+            ? `\nCRITICAL: DO NOT GENERATE ANY OF THE FOLLOWING QUESTIONS THAT THE CANDIDATE HAS ALREADY SOLVED:\n${solvedQuestions.map(q => `- ${q}`).join('\n')}\n`
+            : '';
 
         const prompt = `You are an expert technical interviewer. Generate a unique Data Structures and Algorithms (DSA) question.
 Topic: ${topic || 'General'}
 Difficulty: ${difficulty || 'Medium'}
-
+${avoidanceRule}
 Provide the response in the following JSON format ONLY, without any markdown formatting or extra text:
 {
   "title": "Question Title",
@@ -37,23 +56,26 @@ Provide the response in the following JSON format ONLY, without any markdown for
     { "input": "...", "output": "...", "explanation": "..." }
   ],
   "constraints": ["constraint 1", "constraint 2"],
+  "testCases": [
+    { "input": "...", "expectedOutput": "..." },
+    { "input": "...", "expectedOutput": "..." },
+    { "input": "...", "expectedOutput": "..." }
+  ],
   "starterCode": {
     "javascript": "function solve(args) {\\n  // your code here\\n}",
     "python": "def solve(args):\\n    # your code here\\n    pass",
-    "java": "class Solution {\\n    public void solve(String args) {\\n        // your code here\\n    }\\n}",
-    "cpp": "class Solution {\\npublic:\\n    void solve(string args) {\\n        // your code here\\n    }\\n};"
+    "java": "class Solution {\\n    public String solve(String args) {\\n        // your code here\\n        return \\"\\";\\n    }\\n}",
+    "cpp": "class Solution {\\npublic:\\n    string solve(string args) {\\n        // your code here\\n        return \\"\\";\\n    }\\n};"
   }
 }`;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json"
-            }
+        const response = await ai.chat.completions.create({
+            model: getModel(),
+            messages: [{ role: "system", content: prompt }],
+            response_format: { type: "json_object" }
         });
 
-        let questionData = parseJSONResponse(response.text);
+        let questionData = parseJSONResponse(response.choices[0].message.content);
         res.json(questionData);
     } catch (error) {
         console.error("Error generating question:", error);
@@ -91,15 +113,13 @@ Provide your feedback in the following JSON format ONLY:
   "spaceComplexity": "O(1) - explain why"
 }`;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json"
-            }
+        const response = await ai.chat.completions.create({
+            model: getModel(),
+            messages: [{ role: "system", content: prompt }],
+            response_format: { type: "json_object" }
         });
 
-        let reviewData = parseJSONResponse(response.text);
+        let reviewData = parseJSONResponse(response.choices[0].message.content);
         res.json(reviewData);
     } catch (error) {
         console.error("Error reviewing submission:", error);
@@ -133,13 +153,13 @@ Give ONE short but useful hint (2-3 sentences max).
 
 Respond in JSON: { "hint": "your hint here" }`;
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: prompt,
-            config: { responseMimeType: 'application/json' }
+        const response = await ai.chat.completions.create({
+            model: getModel(),
+            messages: [{ role: "system", content: prompt }],
+            response_format: { type: "json_object" }
         });
 
-        let hintData = parseJSONResponse(response.text);
+        let hintData = parseJSONResponse(response.choices[0].message.content);
         res.json({ hint: hintData.hint });
     } catch (error) {
         console.error('Error generating hint:', error);
@@ -154,12 +174,7 @@ router.post('/chat', async (req, res) => {
         if (!ai) return res.status(503).json({ error: 'AI API key not configured' });
         const { question, message, history = [] } = req.body;
 
-        // Build conversation history as a formatted string
-        const historyText = history.length > 0
-            ? history.map(h => `${h.role === 'user' ? 'Student' : 'Mentor'}: ${h.content}`).join('\n')
-            : '';
-
-        const prompt = `You are a supportive AI coding mentor helping a student during a mock interview.
+        const systemPrompt = `You are a supportive AI coding mentor helping a student during a mock interview.
 The student is solving this problem:
 Title: ${question?.title || 'Unknown'}
 Description: ${question?.description || ''}
@@ -168,18 +183,23 @@ Rules:
 - Guide their thinking WITHOUT giving away the full solution or writing code for them
 - You CAN explain concepts, time/space complexity, and point them in the right direction
 - Be encouraging, concise (2-4 sentences), and conversational
-- If asked directly for the answer, redirect them to think about it themselves
+- If asked directly for the answer, redirect them to think about it themselves`;
 
-${historyText ? `Previous conversation:\n${historyText}\n` : ''}
-Student: ${message}
-Mentor:`;
+        const messages = [
+            { role: "system", content: systemPrompt },
+            ...history.map(h => ({
+                role: h.role === 'user' ? 'user' : 'assistant',
+                content: h.content
+            })),
+            { role: "user", content: message }
+        ];
 
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: prompt,
+        const response = await ai.chat.completions.create({
+            model: getModel(),
+            messages,
         });
 
-        res.json({ reply: response.text.trim() });
+        res.json({ reply: response.choices[0].message.content.trim() });
     } catch (error) {
         console.error('Chat error:', error);
         res.status(500).json({ error: 'Failed to get AI response' });

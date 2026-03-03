@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useContext, useState, useEffect } from 'react';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import InterviewSetup from './pages/InterviewSetup';
@@ -29,13 +29,24 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
-// ── Navigation ────────────────────────────────────────────────────────────
 const Navigation = ({ theme, toggleTheme }) => {
   const { user, logout } = useContext(AuthContext);
+  const location = useLocation();
+  const isInterviewActive = location.pathname === '/interview';
+
+  const handleLogoClick = (e) => {
+    if (isInterviewActive) {
+      e.preventDefault();
+      // We can dispatch a custom event that InterviewRoom listens for,
+      // or rely on the UI 'End Interview' button in the room
+      window.dispatchEvent(new CustomEvent('request-interview-exit'));
+    }
+  };
+
   return (
     <header className="flex-between" style={{ marginBottom: '2rem' }}>
       <div>
-        <Link to="/" style={{ textDecoration: 'none' }}>
+        <Link to="/" onClick={handleLogoClick} style={{ textDecoration: 'none' }}>
           <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>AlgoPrep AI</h1>
           <p className="text-muted" style={{ fontSize: '0.875rem', margin: 0 }}>Your Mock Technical Interviewer</p>
         </Link>
@@ -107,7 +118,7 @@ const AppContent = () => {
         <main>
           <Routes>
             {/* Public */}
-            <Route path="/" element={<Landing />} />
+            <Route path="/" element={user && !loading ? <Navigate to="/app" replace /> : <Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 

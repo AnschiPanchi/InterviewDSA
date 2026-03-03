@@ -68,7 +68,7 @@ const Profile = () => {
         const fetchData = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get('http://localhost:5000/api/performance/trends', {
+                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/performance/trends`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setAttempts(res.data);

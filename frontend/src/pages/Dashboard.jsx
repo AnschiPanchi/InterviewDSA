@@ -71,7 +71,7 @@ const Dashboard = () => {
         const fetchTrends = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await axios.get('http://localhost:5000/api/performance/trends', {
+                const response = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/performance/trends`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setTrends(response.data);

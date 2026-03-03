@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Settings, CheckCircle2, Loader2, ListTree } from 'lucide-react';
@@ -12,6 +12,28 @@ const InterviewSetup = () => {
         duration: 30
     });
 
+    const [solvedQuestions, setSolvedQuestions] = useState([]);
+
+    useEffect(() => {
+        const fetchTrends = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/performance/trends`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                // Extract unique question titles
+                const titles = res.data.map(attempt => attempt.question).filter(Boolean);
+                const uniqueTitles = [...new Set(titles)];
+                setSolvedQuestions(uniqueTitles);
+            } catch (error) {
+                console.error("Failed to fetch past attempts:", error);
+            }
+        };
+        fetchTrends();
+    }, []);
+
     const topics = [
         'Arrays and Strings',
         'Linked Lists',
@@ -19,7 +41,17 @@ const InterviewSetup = () => {
         'Dynamic Programming',
         'Sorting and Searching',
         'System Design Basics',
-        'Recursion'
+        'Recursion',
+        'Sliding Window',
+        'Two Pointers',
+        'Fast & Slow Pointers',
+        'Merge Intervals',
+        'Cyclic Sort',
+        'Tree BFS / DFS',
+        'Topological Sort',
+        'Graphs & Matrices',
+        'Bit Manipulation',
+        'Tries'
     ];
 
     const difficulties = [
@@ -35,9 +67,10 @@ const InterviewSetup = () => {
         setLoading(true);
 
         try {
-            const response = await axios.post('http://localhost:5000/api/ai/generate-question', {
+            const response = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/ai/generate-question`, {
                 topic: formData.topic,
-                difficulty: formData.difficulty
+                difficulty: formData.difficulty,
+                solvedQuestions: solvedQuestions
             });
 
             // Pass the question context via state to the InterviewRoom

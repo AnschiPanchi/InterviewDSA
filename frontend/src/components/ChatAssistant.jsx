@@ -29,7 +29,7 @@ const ChatAssistant = ({ question }) => {
         setLoading(true);
 
         try {
-            const res = await axios.post('http://localhost:5000/api/ai/chat', {
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/ai/chat`, {
                 question,
                 message: trimmed,
                 history: messages.slice(-6), // send last 6 turns for context

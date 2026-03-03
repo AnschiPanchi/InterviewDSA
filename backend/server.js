@@ -9,6 +9,7 @@ import aiRoutes from './routes/ai.js';
 import performanceRoutes from './routes/performance.js';
 import settingsRoutes from './routes/settings.js';
 import leaderboardRoutes from './routes/leaderboard.js';
+import executeRoutes from './routes/execute.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,6 +26,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/performance', performanceRoutes);
 app.use('/api/auth', settingsRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/execute', executeRoutes);
 
 // Wait for MongoDB to connect BEFORE accepting requests
 connectDB().then(() => {

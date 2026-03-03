@@ -25,7 +25,7 @@ const Settings = () => {
         setUsernameStatus(null);
         try {
             const token = localStorage.getItem('token');
-            const res = await axios.put('http://localhost:5000/api/auth/settings',
+            const res = await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/auth/settings`,
                 { newUsername: newUsername.trim() },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -53,7 +53,7 @@ const Settings = () => {
         setPasswordStatus(null);
         try {
             const token = localStorage.getItem('token');
-            await axios.put('http://localhost:5000/api/auth/settings',
+            await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/auth/settings`,
                 { currentPassword, newPassword },
                 { headers: { Authorization: `Bearer ${token}` } }
             );

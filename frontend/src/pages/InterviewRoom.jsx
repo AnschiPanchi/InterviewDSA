@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Editor from '@monaco-editor/react';
 import axios from 'axios';
-import { Code2, Clock, Send, PlayCircle, Loader2, Sparkles, AlertCircle, Lightbulb } from 'lucide-react';
+import { Code2, Clock, Send, PlayCircle, Loader2, Sparkles, AlertCircle, Lightbulb, CheckCircle2, XCircle } from 'lucide-react';
 import TimesUpOverlay from '../components/TimesUpOverlay';
 import ChatAssistant from '../components/ChatAssistant';
 
@@ -12,11 +12,9 @@ const InterviewRoom = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
-    // On first mount: prefer navigation state, fall back to sessionStorage
     const savedSession = JSON.parse(sessionStorage.getItem(SESSION_KEY) || 'null');
     const { question, setup } = location.state || savedSession || {};
 
-    // If we got fresh data from navigation, save it to sessionStorage
     useEffect(() => {
         if (location.state?.question) {
             sessionStorage.setItem(SESSION_KEY, JSON.stringify(location.state));
@@ -28,24 +26,31 @@ const InterviewRoom = () => {
     const [approach, setApproach] = useState(savedSession?.approach || '');
     const [timeLeft, setTimeLeft] = useState(savedSession?.timeLeft ?? ((setup?.duration || 30) * 60));
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isRunning, setIsRunning] = useState(false);
+    const [testResults, setTestResults] = useState(null);
     const [feedback, setFeedback] = useState(null);
-    const [hints, setHints] = useState([]);           // collected hint strings
+    const [hints, setHints] = useState([]);
     const [hintLoading, setHintLoading] = useState(false);
     const MAX_HINTS = 3;
-    const HINT_PENALTY = 5; // points deducted per hint
+    const HINT_PENALTY = 5;
 
-    // Redirect if no context
     useEffect(() => {
         if (!question) navigate('/setup');
     }, [question, navigate]);
 
-    // Persist timer + code to sessionStorage every second so a refresh restores it
     useEffect(() => {
         if (!question || feedback) return;
         sessionStorage.setItem(SESSION_KEY, JSON.stringify({ question, setup, language, code, approach, timeLeft }));
-    }, [timeLeft, code, language, approach]);
 
-    // Timer logic
+        // Warn when trying to close or refresh the page
+        const handleBeforeUnload = (e) => {
+            e.preventDefault();
+            e.returnValue = '';
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [timeLeft, code, language, approach, question, feedback, setup]);
+
     useEffect(() => {
         if (timeLeft <= 0 || feedback || isSubmitting) return;
         const timerId = setInterval(() => {
@@ -54,40 +59,64 @@ const InterviewRoom = () => {
         return () => clearInterval(timerId);
     }, [timeLeft, feedback, isSubmitting]);
 
+    useEffect(() => {
+        const handleExitRequest = () => {
+            if (!feedback && !isSubmitting) setShowExitWarning(true);
+        };
+        window.addEventListener('request-interview-exit', handleExitRequest);
+        return () => window.removeEventListener('request-interview-exit', handleExitRequest);
+    }, [feedback, isSubmitting]);
+
     const formatTime = (seconds) => {
         const m = Math.floor(seconds / 60);
         const s = seconds % 60;
         return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
 
+    const handleRunCode = async () => {
+        if (!question.testCases || question.testCases.length === 0) {
+            alert("No test cases available for this question. This might be an older question format.");
+            return;
+        }
+        setIsRunning(true);
+        setTestResults(null);
+        try {
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/execute`, {
+                code,
+                language,
+                testCases: question.testCases
+            });
+            setTestResults(res.data);
+        } catch (error) {
+            console.error("Execution error:", error);
+            setTestResults({ error: error.response?.data?.error || "Failed to execute code." });
+        } finally {
+            setIsRunning(false);
+        }
+    };
+
     const handleSubmit = async () => {
         setIsSubmitting(true);
-
-        // Calculate time spent
         const totalTime = (setup?.duration || 30) * 60;
         const timeSpent = totalTime - timeLeft;
 
         try {
-            // 1. Get AI Review
-            const reviewRes = await axios.post('http://localhost:5000/api/ai/review', {
+            const reviewRes = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/ai/review`, {
                 question,
                 language,
                 code,
                 approach
             });
             const reviewData = reviewRes.data;
-            // Apply hint penalty: −5 per hint used, minimum 0
             const hintPenalty = hints.length * HINT_PENALTY;
             const finalScore = Math.max(0, reviewData.score - hintPenalty);
             reviewData.score = finalScore;
             if (hintPenalty > 0) reviewData.feedback += ` (Note: −${hintPenalty} pts deducted for ${hints.length} hint${hints.length > 1 ? 's' : ''} used.)`;
             setFeedback(reviewData);
-            // Clear session once submitted — no going back
             sessionStorage.removeItem(SESSION_KEY);
 
-            // 2. Save Attempt to DB
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/performance/save', {
+            await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/performance/save`, {
                 topic: setup?.topic || 'General',
                 difficulty: setup?.difficulty || 'Medium',
                 questionTitle: question.title,
@@ -98,7 +127,6 @@ const InterviewRoom = () => {
                 strengths: reviewData.strengths || [],
                 areasForImprovement: reviewData.areasForImprovement || []
             }, { headers: { Authorization: `Bearer ${token}` } });
-
 
         } catch (error) {
             console.error("Failed to submit and review:", error);
@@ -112,7 +140,7 @@ const InterviewRoom = () => {
         if (hints.length >= MAX_HINTS || hintLoading || feedback) return;
         setHintLoading(true);
         try {
-            const res = await axios.post('http://localhost:5000/api/ai/hint', {
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/ai/hint`, {
                 question,
                 hintsAlreadyGiven: hints
             });
@@ -124,10 +152,56 @@ const InterviewRoom = () => {
         }
     };
 
+    const [showExitWarning, setShowExitWarning] = useState(false);
+
     if (!question) return null;
+
+    // Is the run button disabled (unsupported language)
+    const canRun = ['javascript', 'python', 'cpp', 'java'].includes(language);
 
     return (
         <>
+            {showExitWarning && (
+                <div className="modal-overlay flex-center" style={{ zIndex: 1000, position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.8)' }}>
+                    <div className="glass-panel slide-up" style={{ padding: '2rem', maxWidth: '400px', textAlign: 'center' }}>
+                        <AlertCircle size={48} color="var(--danger)" style={{ marginBottom: '1rem', margin: '0 auto' }} />
+                        <h3 style={{ marginBottom: '1rem' }}>End Interview Early?</h3>
+                        <p className="text-muted" style={{ marginBottom: '1.5rem' }}>
+                            If you leave now, you will receive a score of 0 for this interview attempt and it will be recorded on your profile.
+                        </p>
+                        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <button className="btn btn-outline" onClick={() => setShowExitWarning(false)}>
+                                Keep Coding
+                            </button>
+                            <button className="btn btn-primary" style={{ backgroundColor: 'var(--danger)', borderColor: 'var(--danger)' }} onClick={async () => {
+                                setShowExitWarning(false);
+                                setIsSubmitting(true);
+                                try {
+                                    const token = localStorage.getItem('token');
+                                    await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/performance/save`, {
+                                        topic: setup?.topic || 'General',
+                                        difficulty: setup?.difficulty || 'Medium',
+                                        questionTitle: question.title,
+                                        code: '',
+                                        timeSpent: (setup?.duration || 30) * 60 - timeLeft,
+                                        score: 0,
+                                        feedbackSummary: "Candidate abandoned the interview.",
+                                        strengths: [],
+                                        areasForImprovement: ["Completing interviews"]
+                                    }, { headers: { Authorization: `Bearer ${token}` } });
+                                } catch (e) {
+                                    console.error("Failed to save zero score:", e);
+                                }
+                                sessionStorage.removeItem(SESSION_KEY);
+                                navigate('/app');
+                            }}>
+                                End & Leave
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {timeLeft === 0 && !feedback && (
                 <TimesUpOverlay onSubmit={handleSubmit} isSubmitting={isSubmitting} />
             )}
@@ -187,14 +261,14 @@ const InterviewRoom = () => {
                                     <h4>Examples</h4>
                                     {question.examples?.map((ex, i) => (
                                         <div key={i} style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem' }}>
-                                            <p style={{ margin: '0 0 0.5rem 0' }}><strong>Input:</strong> <code style={{ color: 'var(--text-main)' }}>{ex.input}</code></p>
-                                            <p style={{ margin: '0 0 0.5rem 0' }}><strong>Output:</strong> <code style={{ color: 'var(--success)' }}>{ex.output}</code></p>
+                                            <p style={{ margin: '0 0 0.5rem 0' }}><strong>Input:</strong> <code style={{ color: 'var(--text-main)' }}>{typeof ex.input === 'object' ? JSON.stringify(ex.input) : String(ex.input)}</code></p>
+                                            <p style={{ margin: '0 0 0.5rem 0' }}><strong>Output:</strong> <code style={{ color: 'var(--success)' }}>{typeof ex.output === 'object' ? JSON.stringify(ex.output) : String(ex.output)}</code></p>
                                             {ex.explanation && <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-muted)' }}><strong>Explanation:</strong> {ex.explanation}</p>}
                                         </div>
                                     ))}
                                 </div>
 
-                                {/* ── Hints Panel ── */}
+                                {/* Hints Panel */}
                                 <div className="glass-panel" style={{ padding: '1.25rem', border: hints.length > 0 ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
                                     <div className="flex-between" style={{ marginBottom: hints.length > 0 ? '1rem' : 0 }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.875rem', fontWeight: 600 }}>
@@ -219,14 +293,12 @@ const InterviewRoom = () => {
                                                 {hintLoading ? <><Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} /> Thinking...</> : '💡 Get Hint'}
                                             </button>
                                         )}
-                                        {hints.length >= MAX_HINTS && (
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--danger)' }}>Max hints used</span>
-                                        )}
                                     </div>
                                     {hints.map((hint, i) => (
                                         <div key={i} style={{
                                             backgroundColor: 'rgba(245,158,11,0.08)', padding: '0.75rem',
                                             borderRadius: 'var(--radius-md)', marginBottom: i < hints.length - 1 ? '0.6rem' : 0,
+                                            marginTop: i === 0 ? '1rem' : 0,
                                             borderLeft: '3px solid var(--warning)', fontSize: '0.875rem', lineHeight: 1.6,
                                         }}>
                                             <span style={{ fontSize: '0.7rem', color: 'var(--warning)', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
@@ -308,69 +380,162 @@ const InterviewRoom = () => {
                         )}
                     </div>
 
-                    {/* Right Column: Code Editor */}
-                    <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0 }}>
-                        <div className="flex-between" style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(0,0,0,0.2)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                                <Code2 size={16} />
-                                <select
-                                    value={language}
-                                    onChange={(e) => {
-                                        const newLang = e.target.value;
-                                        setLanguage(newLang);
-                                        if (!feedback && !isSubmitting) {
-                                            setCode(question?.starterCode?.[newLang] || '// Write your solution here...\n');
-                                        }
-                                    }}
-                                    disabled={!!feedback || isSubmitting}
-                                    style={{
-                                        background: 'rgba(0,0,0,0.3)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        color: 'var(--text-main)',
-                                        padding: '0.25rem 0.5rem',
-                                        borderRadius: 'var(--radius-sm)',
-                                        outline: 'none',
-                                        cursor: 'pointer'
-                                    }}
-                                >
-                                    <option value="javascript">JavaScript</option>
-                                    <option value="python">Python</option>
-                                    <option value="java">Java</option>
-                                    <option value="cpp">C++</option>
-                                </select>
+                    {/* Right Column: Code Editor & Runner */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', height: '100%' }}>
+                        <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', padding: 0, flex: 1 }}>
+                            <div className="flex-between" style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'rgba(0,0,0,0.2)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                                    <Code2 size={16} />
+                                    <select
+                                        value={language}
+                                        onChange={(e) => {
+                                            const newLang = e.target.value;
+                                            setLanguage(newLang);
+                                            if (!feedback && !isSubmitting) {
+                                                setCode(question?.starterCode?.[newLang] || '// Write your solution here...\n');
+                                            }
+                                        }}
+                                        disabled={!!feedback || isSubmitting || isRunning}
+                                        style={{
+                                            background: 'rgba(0,0,0,0.3)',
+                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            color: 'var(--text-main)',
+                                            padding: '0.25rem 0.5rem',
+                                            borderRadius: 'var(--radius-sm)',
+                                            outline: 'none',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <option value="javascript">JavaScript</option>
+                                        <option value="python">Python</option>
+                                        <option value="java">Java</option>
+                                        <option value="cpp">C++</option>
+                                    </select>
+                                </div>
+                                {!feedback && (
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            className="btn"
+                                            onClick={handleRunCode}
+                                            disabled={isRunning || isSubmitting || !canRun}
+                                            style={{
+                                                padding: '0.4rem 1rem', fontSize: '0.875rem',
+                                                background: 'rgba(255,255,255,0.1)',
+                                                color: canRun ? 'var(--text-main)' : 'var(--text-muted)',
+                                                border: '1px solid rgba(255,255,255,0.2)',
+                                                cursor: canRun ? 'pointer' : 'not-allowed'
+                                            }}
+                                            title={!canRun ? "Run supported for JS/Python only" : "Run against test cases"}
+                                        >
+                                            {isRunning ? <><Loader2 size={16} className="animate-spin" /> Running</> : <><PlayCircle size={16} /> Run Code</>}
+                                        </button>
+                                        <button
+                                            className="btn btn-primary"
+                                            onClick={handleSubmit}
+                                            disabled={isSubmitting || isRunning}
+                                            style={{ padding: '0.4rem 1rem', fontSize: '0.875rem' }}
+                                        >
+                                            {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Evaluating...</> : <><Send size={16} /> Submit Solution</>}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                            {!feedback && (
-                                <button
-                                    className="btn btn-primary"
-                                    onClick={handleSubmit}
-                                    disabled={isSubmitting}
-                                    style={{ padding: '0.4rem 1rem', fontSize: '0.875rem' }}
-                                >
-                                    {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Evaluating...</> : <><Send size={16} /> Submit Solution</>}
-                                </button>
-                            )}
+                            <div style={{ flex: 1, minHeight: 0 }}>
+                                <Editor
+                                    height="100%"
+                                    language={language}
+                                    theme="vs-dark"
+                                    value={code}
+                                    onChange={(value) => setCode(value)}
+                                    options={{
+                                        minimap: { enabled: false },
+                                        fontSize: 14,
+                                        fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                                        lineHeight: 24,
+                                        padding: { top: 16 },
+                                        readOnly: !!feedback || isRunning,
+                                        scrollBeyondLastLine: false,
+                                        smoothScrolling: true,
+                                        cursorBlinking: 'smooth',
+                                        cursorSmoothCaretAnimation: true,
+                                        formatOnPaste: true,
+                                    }}
+                                />
+                            </div>
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <Editor
-                                height="100%"
-                                language={language}
-                                theme="vs-dark"
-                                value={code}
-                                onChange={(value) => setCode(value)}
-                                options={{
-                                    minimap: { enabled: false },
-                                    fontSize: 14,
-                                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                                    lineHeight: 24,
-                                    padding: { top: 16 },
-                                    readOnly: !!feedback,
-                                    scrollBeyondLastLine: false,
-                                    smoothScrolling: true,
-                                    cursorBlinking: 'smooth',
-                                    cursorSmoothCaretAnimation: true,
-                                    formatOnPaste: true,
-                                }}
-                            />
+
+                        {/* Test Cases Panel */}
+                        <div className="glass-panel" style={{ height: '240px', padding: '1rem', display: 'flex', flexDirection: 'column', backgroundColor: 'rgba(15, 23, 42, 0.8)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontWeight: 600, fontSize: '0.9rem' }}>
+                                <PlayCircle size={16} color="var(--primary)" /> Test Cases
+                            </div>
+                            <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {!testResults && !isRunning && (
+                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                                        Click "Run Code" to execute test cases
+                                    </div>
+                                )}
+                                {isRunning && (
+                                    <div style={{ color: 'var(--primary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', height: '100%' }}>
+                                        <Loader2 size={20} className="animate-spin" /> Executing in remote environment...
+                                    </div>
+                                )}
+                                {testResults && testResults.error && (
+                                    <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: 'var(--radius-md)', color: 'var(--danger)', fontSize: '0.875rem', border: '1px solid rgba(239, 68, 68, 0.3)', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+                                        {testResults.error}
+                                    </div>
+                                )}
+                                {testResults && testResults.results && (
+                                    <>
+                                        {testResults.stdout && (
+                                            <div style={{ marginBottom: '0.5rem' }}>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Standard Output:</div>
+                                                <div style={{ padding: '0.5rem', backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 'var(--radius-sm)', fontSize: '0.8rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                                                    {testResults.stdout}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {testResults.results.map((res, i) => (
+                                            <div key={i} style={{
+                                                backgroundColor: 'rgba(0,0,0,0.3)',
+                                                borderLeft: `3px solid ${res.status === 'Pass' ? 'var(--success)' : 'var(--danger)'}`,
+                                                padding: '0.75rem',
+                                                borderRadius: 'var(--radius-md)',
+                                                fontSize: '0.85rem'
+                                            }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                                    {res.status === 'Pass' ? <CheckCircle2 size={16} color="var(--success)" /> : <XCircle size={16} color="var(--danger)" />}
+                                                    <strong style={{ color: res.status === 'Pass' ? 'var(--success)' : 'var(--danger)' }}>
+                                                        Test Case {i + 1}
+                                                    </strong>
+                                                </div>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Input</div>
+                                                        <code style={{ fontSize: '0.8rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '2px 4px', borderRadius: '4px' }}>{typeof res.input === 'object' ? JSON.stringify(res.input) : String(res.input)}</code>
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Expected</div>
+                                                        <code style={{ fontSize: '0.8rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '2px 4px', borderRadius: '4px' }}>{JSON.stringify(res.expected)}</code>
+                                                    </div>
+                                                    {res.status !== 'Pass' && res.status !== 'Error' && (
+                                                        <div style={{ gridColumn: '1 / -1', marginTop: '0.25rem' }}>
+                                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Actual</div>
+                                                            <code style={{ fontSize: '0.8rem', color: 'var(--danger)', backgroundColor: 'rgba(239,68,68,0.1)', padding: '2px 4px', borderRadius: '4px' }}>{JSON.stringify(res.actual)}</code>
+                                                        </div>
+                                                    )}
+                                                    {res.status === 'Error' && (
+                                                        <div style={{ gridColumn: '1 / -1', marginTop: '0.25rem', color: 'var(--danger)' }}>
+                                                            <div style={{ fontSize: '0.7rem' }}>Runtime Error</div>
+                                                            <code style={{ fontSize: '0.8rem', whiteSpace: 'pre-wrap' }}>{typeof res.error === 'object' ? JSON.stringify(res.error) : String(res.error)}</code>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
 

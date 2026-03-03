@@ -19,7 +19,7 @@ const Leaderboard = () => {
     const { user } = useContext(AuthContext);
 
     useEffect(() => {
-        axios.get('http://localhost:5000/api/leaderboard')
+        axios.get(`${import.meta.env.VITE_API_BASE_URL}/api/leaderboard`)
             .then(res => setData(res.data))
             .catch(err => console.error('Leaderboard fetch error:', err))
             .finally(() => setLoading(false));
