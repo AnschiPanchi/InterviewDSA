@@ -49,7 +49,15 @@ router.post('/generate-question', async (req, res) => {
 Topic: ${topic || 'General'}
 Difficulty: ${difficulty || 'Medium'}
 ${avoidanceRule}
-Provide the response in the following JSON format ONLY, without any markdown formatting or extra text:
+
+CRITICAL INSTRUCTIONS FOR TEST CASES:
+1. "testCases" MUST contain 3-5 valid test cases.
+2. Each test case MUST have "input" and "expectedOutput".
+3. "input" should be the exact arguments to pass to the solve function (e.g., "[1, 2, 3]" for an array, "5" for a number, "\\"abc\\"" for a string).
+4. "starterCode" MUST use a class named "Solution" with a method named "solve" for Java and C++.
+5. Java "solve" should be public. C++ "solve" should be public.
+
+Provide the response in the following JSON format ONLY:
 {
   "title": "Question Title",
   "description": "Clear problem description...",
@@ -58,15 +66,14 @@ Provide the response in the following JSON format ONLY, without any markdown for
   ],
   "constraints": ["constraint 1", "constraint 2"],
   "testCases": [
-    { "input": "...", "expectedOutput": "..." },
-    { "input": "...", "expectedOutput": "..." },
-    { "input": "...", "expectedOutput": "..." }
+    { "input": "[1, 2, 3]", "expectedOutput": "6" },
+    { "input": "[0, 0, 0]", "expectedOutput": "0" }
   ],
   "starterCode": {
-    "javascript": "function solve(args) {\\n  // your code here\\n}",
-    "python": "def solve(args):\\n    # your code here\\n    pass",
-    "java": "class Solution {\\n    public String solve(String args) {\\n        // your code here\\n        return \\"\\";\\n    }\\n}",
-    "cpp": "class Solution {\\npublic:\\n    string solve(string args) {\\n        // your code here\\n        return \\"\\";\\n    }\\n};"
+    "javascript": "function solve(arr) {\\n  // your code here\\n}",
+    "python": "def solve(arr):\\n    # your code here\\n    pass",
+    "java": "public class Solution {\\n    public int solve(int[] arr) {\\n        // your code here\\n        return 0;\\n    }\\n}",
+    "cpp": "class Solution {\\npublic:\\n    int solve(vector<int>& arr) {\\n        // your code here\\n        return 0;\\n    }\\n};"
   }
 }`;
 

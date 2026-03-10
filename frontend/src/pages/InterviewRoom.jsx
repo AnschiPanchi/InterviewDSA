@@ -465,76 +465,140 @@ const InterviewRoom = () => {
                         </div>
 
                         {/* Test Cases Panel */}
-                        <div className="glass-panel" style={{ height: '240px', padding: '1rem', display: 'flex', flexDirection: 'column', backgroundColor: 'rgba(15, 23, 42, 0.8)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontWeight: 600, fontSize: '0.9rem' }}>
-                                <PlayCircle size={16} color="var(--primary)" /> Test Cases
+                        <div className="glass-panel" style={{ height: '300px', padding: '1rem', display: 'flex', flexDirection: 'column', backgroundColor: 'rgba(15, 23, 42, 0.8)' }}>
+                            <div className="flex-between" style={{ marginBottom: '1rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600, fontSize: '0.9rem' }}>
+                                    <PlayCircle size={16} color="var(--primary)" /> Test Cases
+                                </div>
+                                {testResults && (
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                        {testResults.results?.filter(r => r.status === 'Pass').length || 0} / {question.testCases?.length || 0} Passed
+                                    </div>
+                                )}
                             </div>
+                            
                             <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                {!testResults && !isRunning && (
-                                    <div style={{ color: 'var(--text-muted)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                                        Click "Run Code" to execute test cases
-                                    </div>
-                                )}
                                 {isRunning && (
-                                    <div style={{ color: 'var(--primary)', fontSize: '0.875rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', height: '100%' }}>
-                                        <Loader2 size={20} className="animate-spin" /> Executing in remote environment...
+                                    <div style={{ 
+                                        padding: '2rem', 
+                                        textAlign: 'center', 
+                                        color: 'var(--primary)', 
+                                        display: 'flex', 
+                                        flexDirection: 'column', 
+                                        alignItems: 'center', 
+                                        gap: '0.5rem' 
+                                    }}>
+                                        <Loader2 size={24} className="animate-spin" />
+                                        <span style={{ fontSize: '0.875rem' }}>Executing in remote environment...</span>
                                     </div>
                                 )}
-                                {testResults && testResults.error && (
-                                    <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.1)', padding: '1rem', borderRadius: 'var(--radius-md)', color: 'var(--danger)', fontSize: '0.875rem', border: '1px solid rgba(239, 68, 68, 0.3)', whiteSpace: 'pre-wrap', fontFamily: 'monospace' }}>
+
+                                {!isRunning && testResults?.error && (
+                                    <div style={{ 
+                                        backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+                                        padding: '1rem', 
+                                        borderRadius: 'var(--radius-md)', 
+                                        color: 'var(--danger)', 
+                                        fontSize: '0.875rem', 
+                                        border: '1px solid rgba(239, 68, 68, 0.3)', 
+                                        whiteSpace: 'pre-wrap', 
+                                        fontFamily: 'monospace',
+                                        marginBottom: '1rem'
+                                    }}>
+                                        <strong>Execution Error:</strong><br/>
                                         {testResults.error}
                                     </div>
                                 )}
-                                {testResults && testResults.results && (
-                                    <>
-                                        {testResults.stdout && (
-                                            <div style={{ marginBottom: '0.5rem' }}>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Standard Output:</div>
-                                                <div style={{ padding: '0.5rem', backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 'var(--radius-sm)', fontSize: '0.8rem', fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-                                                    {testResults.stdout}
-                                                </div>
-                                            </div>
-                                        )}
-                                        {testResults.results.map((res, i) => (
-                                            <div key={i} style={{
-                                                backgroundColor: 'rgba(0,0,0,0.3)',
-                                                borderLeft: `3px solid ${res.status === 'Pass' ? 'var(--success)' : 'var(--danger)'}`,
-                                                padding: '0.75rem',
-                                                borderRadius: 'var(--radius-md)',
-                                                fontSize: '0.85rem'
-                                            }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                                    {res.status === 'Pass' ? <CheckCircle2 size={16} color="var(--success)" /> : <XCircle size={16} color="var(--danger)" />}
-                                                    <strong style={{ color: res.status === 'Pass' ? 'var(--success)' : 'var(--danger)' }}>
-                                                        Test Case {i + 1}
-                                                    </strong>
-                                                </div>
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                                                    <div>
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Input</div>
-                                                        <code style={{ fontSize: '0.8rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '2px 4px', borderRadius: '4px' }}>{typeof res.input === 'object' ? JSON.stringify(res.input) : String(res.input)}</code>
-                                                    </div>
-                                                    <div>
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Expected</div>
-                                                        <code style={{ fontSize: '0.8rem', backgroundColor: 'rgba(255,255,255,0.05)', padding: '2px 4px', borderRadius: '4px' }}>{JSON.stringify(res.expected)}</code>
-                                                    </div>
-                                                    {res.status !== 'Pass' && res.status !== 'Error' && (
-                                                        <div style={{ gridColumn: '1 / -1', marginTop: '0.25rem' }}>
-                                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Actual</div>
-                                                            <code style={{ fontSize: '0.8rem', color: 'var(--danger)', backgroundColor: 'rgba(239,68,68,0.1)', padding: '2px 4px', borderRadius: '4px' }}>{JSON.stringify(res.actual)}</code>
-                                                        </div>
-                                                    )}
-                                                    {res.status === 'Error' && (
-                                                        <div style={{ gridColumn: '1 / -1', marginTop: '0.25rem', color: 'var(--danger)' }}>
-                                                            <div style={{ fontSize: '0.7rem' }}>Runtime Error</div>
-                                                            <code style={{ fontSize: '0.8rem', whiteSpace: 'pre-wrap' }}>{typeof res.error === 'object' ? JSON.stringify(res.error) : String(res.error)}</code>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </>
+
+                                {testResults?.stdout && (
+                                    <div style={{ marginBottom: '0.5rem' }}>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Latest Output:</div>
+                                        <pre style={{ 
+                                            padding: '0.75rem', 
+                                            backgroundColor: 'rgba(0,0,0,0.5)', 
+                                            borderRadius: 'var(--radius-sm)', 
+                                            fontSize: '0.8rem', 
+                                            color: '#e2e8f0',
+                                            overflowX: 'auto' 
+                                        }}>
+                                            {testResults.stdout}
+                                        </pre>
+                                    </div>
                                 )}
+
+                                {(question.testCases || []).map((tc, i) => {
+                                    const result = testResults?.results?.[i];
+                                    const status = result?.status || 'Not Run';
+                                    
+                                    return (
+                                        <div key={i} style={{
+                                            backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                                            border: `1px solid ${
+                                                status === 'Pass' ? 'rgba(16, 185, 129, 0.3)' : 
+                                                status === 'Fail' || status === 'Error' ? 'rgba(239, 68, 68, 0.3)' : 
+                                                'rgba(255, 255, 255, 0.08)'
+                                            }`,
+                                            borderLeft: `4px solid ${
+                                                status === 'Pass' ? 'var(--success)' : 
+                                                status === 'Fail' || status === 'Error' ? 'var(--danger)' : 
+                                                'var(--primary)'
+                                            }`,
+                                            padding: '1rem',
+                                            borderRadius: 'var(--radius-md)',
+                                            transition: 'var(--transition)'
+                                        }}>
+                                            <div className="flex-between" style={{ marginBottom: '0.75rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    {status === 'Pass' && <CheckCircle2 size={16} color="var(--success)" />}
+                                                    {(status === 'Fail' || status === 'Error') && <XCircle size={16} color="var(--danger)" />}
+                                                    {status === 'Not Run' && <PlayCircle size={16} color="var(--text-muted)" />}
+                                                    <strong style={{ fontSize: '0.85rem' }}>Test Case {i + 1}</strong>
+                                                </div>
+                                                <span style={{ 
+                                                    fontSize: '0.7rem', 
+                                                    fontWeight: 600,
+                                                    color: status === 'Pass' ? 'var(--success)' : status === 'Fail' || status === 'Error' ? 'var(--danger)' : 'var(--text-muted)'
+                                                }}>
+                                                    {status.toUpperCase()}
+                                                </span>
+                                            </div>
+
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                                                <div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>Input</div>
+                                                    <code style={{ fontSize: '0.75rem', display: 'block', backgroundColor: 'rgba(0,0,0,0.3)', padding: '0.3rem', borderRadius: '4px' }}>
+                                                        {typeof tc.input === 'object' ? JSON.stringify(tc.input) : String(tc.input)}
+                                                    </code>
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>Expected</div>
+                                                    <code style={{ fontSize: '0.75rem', display: 'block', backgroundColor: 'rgba(0,0,0,0.3)', padding: '0.3rem', borderRadius: '4px' }}>
+                                                        {typeof tc.expectedOutput === 'object' ? JSON.stringify(tc.expectedOutput) : String(tc.expectedOutput)}
+                                                    </code>
+                                                </div>
+                                                
+                                                {result && (status === 'Fail' || status === 'Error') && (
+                                                    <div style={{ gridColumn: '1 / -1', marginTop: '0.25rem' }}>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--danger)', marginBottom: '0.2rem' }}>
+                                                            {status === 'Error' ? 'Execution Error' : 'Actual Output'}
+                                                        </div>
+                                                        <code style={{ 
+                                                            fontSize: '0.75rem', 
+                                                            display: 'block', 
+                                                            backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+                                                            color: 'var(--danger)',
+                                                            padding: '0.5rem', 
+                                                            borderRadius: '4px',
+                                                            whiteSpace: 'pre-wrap'
+                                                        }}>
+                                                            {status === 'Error' ? (result.error || 'Unknown error') : JSON.stringify(result.actual)}
+                                                        </code>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
