@@ -10,7 +10,7 @@ import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import Leaderboard from './pages/Leaderboard';
 import Landing from './pages/Landing';
-import VerifyEmail from './pages/VerifyEmail';
+
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import OnboardingModal, { shouldShowOnboarding } from './components/OnboardingModal';
@@ -124,7 +124,7 @@ const AppContent = () => {
             <Route path="/" element={user && !loading ? <Navigate to="/app" replace /> : <Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
+
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 

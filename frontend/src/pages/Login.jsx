@@ -20,12 +20,7 @@ const Login = () => {
             await login(username, password);
             navigate('/app');
         } catch (err) {
-            if (err.response?.status === 403 && err.response?.data?.isVerified === false) {
-                // Redirect user to verify email
-                navigate('/verify-email', { state: { email: err.response.data.email, fromLogin: true } });
-            } else {
-                setError(err.response?.data?.error || 'Failed to login');
-            }
+            setError(err.response?.data?.error || 'Failed to login');
         } finally {
             setLoading(false);
         }

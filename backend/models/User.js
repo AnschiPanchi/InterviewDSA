@@ -9,7 +9,7 @@ const userSchema = new mongoose.Schema({
     github: { type: String, trim: true },
     skills: [{ type: String, trim: true }],
     targetJob: { type: String, trim: true },
-    isVerified: { type: Boolean, default: false },
+    isVerified: { type: Boolean, default: true },
     otp: { type: String },
     otpExpires: { type: Date },
     lastLogin: { type: Date, default: null },

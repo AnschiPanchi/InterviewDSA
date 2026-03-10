@@ -1,31 +1,42 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
-import { UserPlus, Loader2 } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext';
+import { UserPlus, Loader2, ShieldCheck } from 'lucide-react';
 
 const Register = () => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [captchaAnswer, setCaptchaAnswer] = useState('');
+    const [captchaQuestion, setCaptchaQuestion] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
+    const { register } = useContext(AuthContext);
+
+    // Generate a simple math question on mount
+    useEffect(() => {
+        generateCaptcha();
+    }, []);
+
+    const generateCaptcha = () => {
+        const num1 = Math.floor(Math.random() * 10) + 1;
+        const num2 = Math.floor(Math.random() * 10) + 1;
+        setCaptchaQuestion(`${num1} + ${num2}`);
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
         try {
-            await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, {
-                username,
-                email,
-                password
-            });
-            // Pass email in state so verify page knows who to verify
-            navigate('/verify-email', { state: { email } });
+            await register(username, email, password, captchaQuestion, captchaAnswer);
+            navigate('/app');
         } catch (err) {
             setError(err.response?.data?.error || 'Failed to register');
+            generateCaptcha(); // Fresh question if failed
+            setCaptchaAnswer('');
         } finally {
             setLoading(false);
         }
@@ -83,13 +94,35 @@ const Register = () => {
                         />
                     </div>
 
+                    {/* Simple Math Captcha */}
+                    <div className="form-group" style={{ marginTop: '1.5rem', padding: '1rem', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>
+                            <ShieldCheck size={16} /> Human Verification
+                        </label>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ backgroundColor: 'rgba(0,0,0,0.2)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: '2px', minWidth: '80px', textAlign: 'center' }}>
+                                {captchaQuestion}
+                            </div>
+                            <span style={{ fontSize: '1.2rem', color: 'var(--text-muted)' }}>=</span>
+                            <input
+                                type="number"
+                                className="form-control"
+                                placeholder="?"
+                                style={{ textAlign: 'center', width: '80px' }}
+                                value={captchaAnswer}
+                                onChange={(e) => setCaptchaAnswer(e.target.value)}
+                                required
+                            />
+                        </div>
+                    </div>
+
                     <button
                         type="submit"
                         className="btn btn-primary"
-                        style={{ width: '100%', padding: '0.875rem', marginTop: '1rem', backgroundColor: 'var(--success)' }}
+                        style={{ width: '100%', padding: '0.875rem', marginTop: '1.5rem', backgroundColor: 'var(--success)' }}
                         disabled={loading}
                     >
-                        {loading ? <Loader2 size={20} className="animate-spin" /> : 'Register'}
+                        {loading ? <Loader2 size={20} className="animate-spin auto-margin-x" /> : 'Register Now'}
                     </button>
 
                     <div style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.875rem' }}>

@@ -30,8 +30,14 @@ export const AuthProvider = ({ children }) => {
         setUser(res.data.user);
     };
 
-    const register = async (username, password) => {
-        const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, { username, password });
+    const register = async (username, email, password, captchaQuestion, captchaAnswer) => {
+        const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/auth/register`, { 
+            username, 
+            email, 
+            password,
+            captchaQuestion,
+            captchaAnswer
+        });
         localStorage.setItem('token', res.data.token);
         setUser(res.data.user);
     };
