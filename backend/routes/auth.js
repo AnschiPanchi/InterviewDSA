@@ -7,8 +7,38 @@ import sendEmail from '../utils/sendEmail.js';
 
 const router = express.Router();
 
+// Helper to calculate & update login streak
+const updateStreak = async (user) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let newStreak = user.currentStreak || 0;
+    const lastLogin = user.lastLogin ? new Date(user.lastLogin) : null;
+
+    if (lastLogin) {
+        const lastDay = new Date(lastLogin);
+        lastDay.setHours(0, 0, 0, 0);
+        const diffDays = Math.floor((today - lastDay) / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 1) {
+            newStreak += 1;
+        } else if (diffDays > 1) {
+            newStreak = 1;
+        }
+        // diffDays === 0 means already logged in today, keep streak as is
+    } else {
+        newStreak = 1;
+    }
+
+    user.currentStreak = newStreak;
+    user.lastLogin = new Date();
+    await user.save();
+    return newStreak;
+};
+
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
+    console.log('Registration attempt:', req.body);
     const { username, password, email, captchaAnswer, captchaQuestion } = req.body;
     
     if (!username || !password || !email) {
@@ -64,8 +94,8 @@ router.post('/register', async (req, res) => {
             } 
         });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Server error during registration' });
+        console.error('REGISTRATION ERROR:', err);
+        res.status(500).json({ error: 'Server error during registration', details: err.message, stack: err.stack });
     }
 });
 
