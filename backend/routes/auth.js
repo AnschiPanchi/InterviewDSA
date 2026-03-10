@@ -25,7 +25,6 @@ const updateStreak = async (user) => {
         } else if (diffDays > 1) {
             newStreak = 1;
         }
-        // diffDays === 0 means already logged in today, keep streak as is
     } else {
         newStreak = 1;
     }
@@ -45,8 +44,7 @@ router.post('/register', async (req, res) => {
         return res.status(400).json({ error: 'Username, email, and password required' });
     }
 
-    // Simple math captcha validation
-    // captchaQuestion format: "5 + 3"
+    // Math captcha validation
     try {
         const parts = captchaQuestion.split(' ');
         const num1 = parseInt(parts[0]);
@@ -57,7 +55,7 @@ router.post('/register', async (req, res) => {
         else if (op === '-') expected = num1 - num2;
         
         if (parseInt(captchaAnswer) !== expected) {
-            return res.status(400).json({ error: 'Incorrect captcha answer. Please try again.' });
+            return res.status(400).json({ error: 'Incorrect captcha answer' });
         }
     } catch (err) {
         return res.status(400).json({ error: 'Invalid captcha' });
@@ -76,7 +74,7 @@ router.post('/register', async (req, res) => {
         const user = new User({
             username,
             email,
-            password, // Schema hook hashes this
+            password,
             isVerified: true,
             currentStreak: 1,
             lastLogin: new Date()
@@ -95,7 +93,7 @@ router.post('/register', async (req, res) => {
         });
     } catch (err) {
         console.error('REGISTRATION ERROR:', err);
-        res.status(500).json({ error: 'Server error during registration', details: err.message, stack: err.stack });
+        res.status(500).json({ error: 'Server error during registration', details: err.message });
     }
 });
 
@@ -107,7 +105,6 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        // Find by username OR email
         const user = await User.findOne({ 
             $or: [{ username: username }, { email: username }] 
         });
@@ -117,6 +114,7 @@ router.post('/login', async (req, res) => {
         const valid = await user.comparePassword(password);
         if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
+        // Update streak on login
         const newStreak = await updateStreak(user);
 
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -138,54 +136,9 @@ router.get('/me', verifyToken, async (req, res) => {
     }
 });
 
-// POST /api/auth/forgot-password
+// POST /api/auth/forgot-password (placeholder)
 router.post('/forgot-password', async (req, res) => {
-    const { email } = req.body;
-    try {
-        const user = await User.findOne({ email });
-        if (!user) {
-            // Silently return success to prevent email enumeration
-            return res.json({ message: 'If an account with that email exists, a reset code has been sent.' });
-        }
-
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        user.otp = otp;
-        user.otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
-        await user.save();
-
-        await sendEmail({
-            to: email,
-            subject: 'InterviewDSA - Password Reset Code',
-            html: `<p>Your password reset code is: <strong>${otp}</strong></p><p>This code will expire in 15 minutes.</p>`
-        });
-
-        res.json({ message: 'If an account with that email exists, a reset code has been sent.' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Failed to process forgot password request' });
-    }
-});
-
-// POST /api/auth/reset-password
-router.post('/reset-password', async (req, res) => {
-    const { email, otp, newPassword } = req.body;
-    try {
-        const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ error: 'Invalid request' });
-        
-        if (user.otp !== otp) return res.status(400).json({ error: 'Invalid reset code' });
-        if (new Date() > user.otpExpires) return res.status(400).json({ error: 'Reset code has expired' });
-
-        user.password = newPassword; // Will be hashed by pre-save hook
-        user.otp = undefined;
-        user.otpExpires = undefined;
-        await user.save();
-
-        res.json({ message: 'Password reset successful. You can now log in.' });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Server error during password reset' });
-    }
+    res.status(501).json({ error: 'Reset password is temporarily disabled. Please contact support.' });
 });
 
 export default router;
