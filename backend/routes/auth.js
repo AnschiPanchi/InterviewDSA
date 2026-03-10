@@ -7,6 +7,11 @@ import sendEmail from '../utils/sendEmail.js';
 
 const router = express.Router();
 
+// Temporary in-memory store for pending registrations.
+// In a true large-scale production app, this would be Redis.
+// Key: email (string), Value: { username, email, password, otp, expires }
+const tempOtpStore = new Map();
+
 // Helper to calculate & update login streak
 const updateStreak = async (user) => {
     const today = new Date();
@@ -56,15 +61,14 @@ router.post('/register', async (req, res) => {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
 
-        const user = new User({ 
+        // Store user in volatile memory instead of MongoDB
+        tempOtpStore.set(email, {
             username, 
             email, 
             password, 
             otp,
-            otpExpires,
-            isVerified: false
+            otpExpires
         });
-        await user.save();
 
         await sendEmail({
             to: email,
@@ -83,19 +87,28 @@ router.post('/register', async (req, res) => {
 router.post('/verify-email', async (req, res) => {
     const { email, otp } = req.body;
     try {
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ error: 'User not found' });
+        const pendingUser = tempOtpStore.get(email);
+        if (!pendingUser) return res.status(404).json({ error: 'Registration session expired or does not exist.' });
         
-        if (user.isVerified) return res.status(400).json({ error: 'Email already verified' });
-        if (user.otp !== otp) return res.status(400).json({ error: 'Invalid verification code' });
-        if (new Date() > user.otpExpires) return res.status(400).json({ error: 'Verification code has expired' });
+        if (pendingUser.otp !== otp) return res.status(400).json({ error: 'Invalid verification code' });
+        if (new Date() > pendingUser.otpExpires) {
+            tempOtpStore.delete(email); // Clean up expired session
+            return res.status(400).json({ error: 'Verification code has expired. Please register again.' });
+        }
 
-        user.isVerified = true;
-        user.otp = undefined;
-        user.otpExpires = undefined;
-        user.currentStreak = 1;
-        user.lastLogin = new Date();
+        // OTP Validated! Now permanently save to MongoDB
+        const user = new User({
+            username: pendingUser.username,
+            email: pendingUser.email,
+            password: pendingUser.password, // Schema hook hashes this
+            isVerified: true,
+            currentStreak: 1,
+            lastLogin: new Date()
+        });
         await user.save();
+
+        // Clear memory
+        tempOtpStore.delete(email);
 
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
         res.json({ 
@@ -121,14 +134,12 @@ router.post('/verify-email', async (req, res) => {
 router.post('/resend-otp', async (req, res) => {
     const { email } = req.body;
     try {
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ error: 'User not found' });
-        if (user.isVerified) return res.status(400).json({ error: 'Email already verified' });
+        const pendingUser = tempOtpStore.get(email);
+        if (!pendingUser) return res.status(404).json({ error: 'No pending registration found for this email.' });
 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        user.otp = otp;
-        user.otpExpires = new Date(Date.now() + 15 * 60 * 1000);
-        await user.save();
+        pendingUser.otp = otp;
+        pendingUser.otpExpires = new Date(Date.now() + 15 * 60 * 1000);
 
         await sendEmail({
             to: email,
