@@ -3,7 +3,15 @@ import bcrypt from 'bcrypt';
 
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true, trim: true },
+    email: { type: String, required: true, unique: true, trim: true },
     password: { type: String, required: true },
+    linkedin: { type: String, trim: true },
+    github: { type: String, trim: true },
+    skills: [{ type: String, trim: true }],
+    targetJob: { type: String, trim: true },
+    isVerified: { type: Boolean, default: false },
+    otp: { type: String },
+    otpExpires: { type: Date },
     lastLogin: { type: Date, default: null },
     currentStreak: { type: Number, default: 0 }
 }, { timestamps: true });

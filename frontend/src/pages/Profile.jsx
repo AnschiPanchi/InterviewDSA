@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
-import { Flame, Award, Star, TrendingUp, Clock, Code2, Target, Zap } from 'lucide-react';
+import { Flame, Award, Star, TrendingUp, Clock, Code2, Target, Zap, Linkedin, Github, Sparkles, Navigation, CheckCircle2 } from 'lucide-react';
 import { AuthContext } from '../context/AuthContext';
 
 // ── Badges ────────────────────────────────────────────────────────────────
@@ -63,6 +63,48 @@ const Profile = () => {
     const { user } = useContext(AuthContext);
     const [attempts, setAttempts] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [recommendation, setRecommendation] = useState(null);
+    const [recLoading, setRecLoading] = useState(false);
+    const [recError, setRecError] = useState(null);
+
+    const getRecommendation = async () => {
+        setRecLoading(true);
+        setRecError(null);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/ai/recommend-topic`, 
+                { skills: user?.skills || [], targetJob: user?.targetJob || '', userId: user?._id },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setRecommendation(res.data);
+        } catch (err) {
+            setRecError('Failed to load recommendation.');
+        } finally {
+            setRecLoading(false);
+        }
+    };
+
+    const [jobSkills, setJobSkills] = useState(null);
+    const [jobSkillsLoading, setJobSkillsLoading] = useState(false);
+    const [jobSkillsError, setJobSkillsError] = useState(null);
+
+    const getJobSkills = async () => {
+        if (!user?.targetJob) return;
+        setJobSkillsLoading(true);
+        setJobSkillsError(null);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/ai/job-skills`, 
+                { skills: user?.skills || [], targetJob: user.targetJob },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setJobSkills(res.data);
+        } catch (err) {
+            setJobSkillsError('Failed to analyze skill gap.');
+        } finally {
+            setJobSkillsLoading(false);
+        }
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -123,8 +165,20 @@ const Profile = () => {
                     {user?.username?.[0]?.toUpperCase()}
                 </div>
                 <div style={{ flex: 1 }}>
-                    <h2 style={{ margin: '0 0 0.25rem' }}>{user?.username}</h2>
-                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.25rem' }}>
+                        <h2 style={{ margin: 0 }}>{user?.username}</h2>
+                        {user?.linkedin && (
+                            <a href={user.linkedin} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#0e76a8'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
+                                <Linkedin size={20} />
+                            </a>
+                        )}
+                        {user?.github && (
+                            <a href={user.github} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = '#ffffff'} onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
+                                <Github size={20} />
+                            </a>
+                        )}
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
                         {user?.currentStreak > 0 && (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--warning)', fontWeight: 600, fontSize: '0.875rem' }}>
                                 <Flame size={15} /> {user.currentStreak} day streak
@@ -137,6 +191,27 @@ const Profile = () => {
                             Member since {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'recently'}
                         </span>
                     </div>
+
+                    {user?.targetJob && (
+                        <div style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--primary)', fontSize: '0.9rem', fontWeight: 500 }}>
+                            <Navigation size={16} /> Target Role: <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{user.targetJob}</span>
+                        </div>
+                    )}
+                    
+                    {/* Skills map */}
+                    {user?.skills && user.skills.length > 0 && (
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                            {user.skills.map((skill, i) => (
+                                <span key={i} style={{ 
+                                    padding: '0.2rem 0.6rem', backgroundColor: 'rgba(255,255,255,0.08)', 
+                                    border: '1px solid rgba(255,255,255,0.15)', borderRadius: '1rem', 
+                                    fontSize: '0.75rem', color: 'var(--text-primary)' 
+                                }}>
+                                    {skill}
+                                </span>
+                            ))}
+                        </div>
+                    )}
                 </div>
                 {/* Pass rate circle */}
                 {totalAttempts > 0 && (
@@ -152,6 +227,71 @@ const Profile = () => {
                             </div>
                         </div>
                         <p className="text-muted" style={{ margin: '0.25rem 0 0', fontSize: '0.7rem' }}>pass rate</p>
+                    </div>
+                )}
+            </div>
+
+            {/* AI Learning Path Panel */}
+            {user?.targetJob && (
+                <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', border: '1px solid rgba(16,185,129,0.3)', background: 'rgba(16,185,129,0.03)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div>
+                            <h3 style={{ fontSize: '1.1rem', margin: '0 0 0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Navigation size={18} color="#10b981" /> AI Skill Gap Analysis
+                            </h3>
+                            <p className="text-muted" style={{ margin: 0, fontSize: '0.875rem', maxWidth: '500px' }}>
+                                We noticed you're aiming to be a <strong>{user.targetJob}</strong>. Find out exactly what technical skills you are currently missing to reach that goal.
+                            </p>
+                        </div>
+                        <button onClick={getJobSkills} className="btn" disabled={jobSkillsLoading} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', backgroundColor: '#10b981', color: '#000', fontWeight: 600 }}>
+                            {jobSkillsLoading ? 'Analyzing Resume...' : 'Generate Learning Path'}
+                        </button>
+                    </div>
+                    
+                    {jobSkillsError && <p style={{ color: 'var(--danger)', fontSize: '0.875rem', marginTop: '1rem' }}>{jobSkillsError}</p>}
+                    
+                    {jobSkills && (
+                        <div className="slide-up" style={{ marginTop: '1.5rem', padding: '1.25rem', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-md)', borderLeft: '4px solid #10b981' }}>
+                            <p style={{ margin: '0 0 1rem', fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 500 }}>{jobSkills.verdict}</p>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {jobSkills.missingSkills?.map((item, idx) => (
+                                    <div key={idx} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start', padding: '0.75rem', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: 'var(--radius-sm)' }}>
+                                        <CheckCircle2 size={18} color="#10b981" style={{ marginTop: '0.1rem', flexShrink: 0 }} />
+                                        <div>
+                                            <p style={{ margin: '0 0 0.2rem', fontWeight: 600, fontSize: '0.9rem', color: '#10b981' }}>{item.skill}</p>
+                                            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)' }}>{item.reason}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* AI Recommendation Panel */}
+            <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '2rem', border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.03)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                    <div>
+                        <h3 style={{ fontSize: '1.1rem', margin: '0 0 0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Sparkles size={18} color="#ec4899" /> AI Topic Recommendation
+                        </h3>
+                        <p className="text-muted" style={{ margin: 0, fontSize: '0.875rem', maxWidth: '500px' }}>
+                            Not sure what to practice next? Let our AI analyze your skills and performance to suggest the single most impactful interview topic for you to focus on right now.
+                        </p>
+                    </div>
+                    <button onClick={getRecommendation} className="btn btn-primary" disabled={recLoading} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {recLoading ? 'Analyzing Profile...' : 'Get Recommendation'}
+                    </button>
+                </div>
+                
+                {recError && <p style={{ color: 'var(--danger)', fontSize: '0.875rem', marginTop: '1rem' }}>{recError}</p>}
+                
+                {recommendation && (
+                    <div className="slide-up" style={{ marginTop: '1.5rem', padding: '1.25rem', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 'var(--radius-md)', borderLeft: '4px solid #ec4899' }}>
+                        <h4 style={{ margin: '0 0 0.5rem', fontSize: '1rem', color: 'var(--text-primary)' }}>Suggested Topic: <strong style={{ color: '#ec4899' }}>{recommendation.topic}</strong></h4>
+                        <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>{recommendation.reason}</p>
                     </div>
                 )}
             </div>

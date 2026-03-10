@@ -1,5 +1,6 @@
 import express from 'express';
 import OpenAI from 'openai';
+import Attempt from '../models/Attempt.js';
 
 const router = express.Router();
 
@@ -203,6 +204,117 @@ Rules:
     } catch (error) {
         console.error('Chat error:', error);
         res.status(500).json({ error: 'Failed to get AI response' });
+    }
+});
+
+router.post('/recommend-topic', async (req, res) => {
+    try {
+        const ai = getAi();
+        if (!ai) return res.status(503).json({ error: "AI API key not configured on server" });
+        const { skills, targetJob, userId } = req.body;
+
+        // Fetch user attempts to find weak topics
+        let weakTopicsContext = "";
+        try {
+            if (userId) {
+                const attempts = await Attempt.find({ user: userId });
+                if (attempts.length > 0) {
+                    const topicMap = {};
+                    attempts.forEach(a => {
+                        if (!a.topic) return;
+                        if (!topicMap[a.topic]) topicMap[a.topic] = { total: 0, count: 0 };
+                        topicMap[a.topic].total += a.score;
+                        topicMap[a.topic].count++;
+                    });
+                    
+                    const topicBreakdown = Object.entries(topicMap)
+                        .map(([topic, { total, count }]) => ({ topic, avg: Math.round(total / count) }))
+                        .sort((a, b) => a.avg - b.avg); // Sort ascending (weakest first)
+                    
+                    const weakTopics = topicBreakdown.filter(t => t.avg < 70).slice(0, 3).map(t => `${t.topic} (Avg Score: ${t.avg})`);
+                    if (weakTopics.length > 0) {
+                        weakTopicsContext = `\nCRITICAL CONTEXT: The candidate has historically struggled with these topics in past interviews: ${weakTopics.join(', ')}. Factor this into your recommendation.`;
+                    } else {
+                        weakTopicsContext = `\nThe candidate has no drastically weak topics on record, so focus on their tech stack or target job.`;
+                    }
+                }
+            }
+        } catch(e) { console.error("Could not fetch attempts for weak topic analysis", e); }
+
+        const skillsContext = (skills && skills.length > 0) 
+            ? `The candidate has the following skills/tech stack: ${skills.join(', ')}.`
+            : `The candidate has not provided specific technical skills yet.`;
+            
+        const jobContext = targetJob
+            ? `\nThe candidate's ultimate career goal is: "${targetJob}".`
+            : "";
+
+        const prompt = `You are an expert technical interviewer and career coach.
+${skillsContext}${jobContext}${weakTopicsContext}
+
+Based on this complete profile (skills, weak mock interview topics, and target job), recommend ONE highly relevant Data Structures and Algorithms (DSA) topic for them to practice next to improve their interview readiness.
+
+Provide the response in the following JSON format ONLY, without any markdown formatting or extra text:
+{
+  "topic": "The exact name of the topic (e.g., 'Graphs', 'Dynamic Programming', 'Sliding Window', 'Trees')",
+  "reason": "A motivational, personalized 1-2 sentence explanation of why this topic is perfect for them based on their specific weak areas, target job, or skillset."
+}`;
+
+        const response = await ai.chat.completions.create({
+            model: getModel(),
+            messages: [{ role: "system", content: prompt }],
+            response_format: { type: "json_object" }
+        });
+
+        let data = parseJSONResponse(response.choices[0].message.content);
+        res.json(data);
+    } catch (error) {
+        console.error("Error generating topic recommendation:", error);
+        res.status(500).json({ error: "Failed to generate recommendation: " + error.message });
+    }
+});
+
+router.post('/job-skills', async (req, res) => {
+    try {
+        const ai = getAi();
+        if (!ai) return res.status(503).json({ error: "AI API key not configured on server" });
+        const { skills, targetJob } = req.body;
+
+        if (!targetJob) return res.status(400).json({ error: "Target job is required to generate a learning path." });
+
+        const skillsContext = (skills && skills.length > 0) 
+            ? `Current skills: ${skills.join(', ')}.`
+            : `Current skills: None provided.`;
+
+        const prompt = `You are an expert technical career counselor.
+Target Job: ${targetJob}
+${skillsContext}
+
+Analyze what crucial technical skills or technologies the candidate is missing to successfully land their Target Job.
+Identify the top 3-5 concrete technical skills they need to learn. 
+
+Provide the response in the following JSON format ONLY, without any markdown formatting or extra text:
+{
+  "verdict": "A 1-2 sentence summary of their current standing towards this job and an encouraging word.",
+  "missingSkills": [
+    {
+      "skill": "Name of the technology/skill",
+      "reason": "A concise, 1-sentence explanation of why this is required for the target job."
+    }
+  ]
+}`;
+
+        const response = await ai.chat.completions.create({
+            model: getModel(),
+            messages: [{ role: "system", content: prompt }],
+            response_format: { type: "json_object" }
+        });
+
+        let data = parseJSONResponse(response.choices[0].message.content);
+        res.json(data);
+    } catch (error) {
+        console.error("Error generating skill gap:", error);
+        res.status(500).json({ error: "Failed to generate skill gap analysis: " + error.message });
     }
 });
 

@@ -18,6 +18,14 @@ const Settings = () => {
     const [passwordStatus, setPasswordStatus] = useState(null);
     const [passwordLoading, setPasswordLoading] = useState(false);
 
+    // Professional Profile form
+    const [linkedin, setLinkedin] = useState(user?.linkedin || '');
+    const [github, setGithub] = useState(user?.github || '');
+    const [skillsInput, setSkillsInput] = useState(user?.skills?.join(', ') || '');
+    const [targetJob, setTargetJob] = useState(user?.targetJob || '');
+    const [profileStatus, setProfileStatus] = useState(null);
+    const [profileLoading, setProfileLoading] = useState(false);
+
     const handleUsernameChange = async (e) => {
         e.preventDefault();
         if (!newUsername.trim()) return;
@@ -63,6 +71,29 @@ const Settings = () => {
             setPasswordStatus({ type: 'error', msg: err.response?.data?.error || 'Failed to update password' });
         } finally {
             setPasswordLoading(false);
+        }
+    };
+
+    const handleProfileChange = async (e) => {
+        e.preventDefault();
+        setProfileLoading(true);
+        setProfileStatus(null);
+        try {
+            const token = localStorage.getItem('token');
+            const skillsArray = skillsInput.split(',').map(s => s.trim()).filter(s => s);
+            const payload = { linkedin, github, skills: skillsArray, targetJob: targetJob.trim() };
+            
+            await axios.put(`${import.meta.env.VITE_API_BASE_URL}/api/auth/settings`,
+                payload,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            
+            updateUser(payload);
+            setProfileStatus({ type: 'success', msg: 'Professional profile updated!' });
+        } catch (err) {
+            setProfileStatus({ type: 'error', msg: err.response?.data?.error || 'Failed to update profile' });
+        } finally {
+            setProfileLoading(false);
         }
     };
 
@@ -165,6 +196,79 @@ const Settings = () => {
                     ))}
                     <button type="submit" className="btn btn-primary" disabled={passwordLoading || !currentPassword || !newPassword || !confirmPassword} style={{ alignSelf: 'flex-start', padding: '0.6rem 1.5rem' }}>
                         {passwordLoading ? 'Changing...' : 'Change Password'}
+                    </button>
+                </form>
+            </div>
+
+            {/* Professional Profile */}
+            <div className="glass-panel" style={{ padding: '1.5rem', marginTop: '1.5rem' }}>
+                <h3 style={{ fontSize: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1.25rem' }}>
+                    <User size={18} color="var(--primary)" /> Professional Profile
+                </h3>
+                <StatusBanner status={profileStatus} />
+                <form onSubmit={handleProfileChange} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                        <label className="text-muted" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem' }}>LinkedIn URL</label>
+                        <input
+                            type="text"
+                            value={linkedin}
+                            onChange={e => setLinkedin(e.target.value)}
+                            placeholder="https://linkedin.com/in/username"
+                            style={{
+                                width: '100%', padding: '0.75rem 1rem', boxSizing: 'border-box',
+                                backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
+                                fontSize: '0.95rem', outline: 'none',
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-muted" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem' }}>GitHub URL</label>
+                        <input
+                            type="text"
+                            value={github}
+                            onChange={e => setGithub(e.target.value)}
+                            placeholder="https://github.com/username"
+                            style={{
+                                width: '100%', padding: '0.75rem 1rem', boxSizing: 'border-box',
+                                backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
+                                fontSize: '0.95rem', outline: 'none',
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-muted" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem' }}>Target Job Role</label>
+                        <input
+                            type="text"
+                            value={targetJob}
+                            onChange={e => setTargetJob(e.target.value)}
+                            placeholder="e.g. Senior Frontend Engineer"
+                            style={{
+                                width: '100%', padding: '0.75rem 1rem', boxSizing: 'border-box',
+                                backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
+                                fontSize: '0.95rem', outline: 'none',
+                            }}
+                        />
+                    </div>
+                    <div>
+                        <label className="text-muted" style={{ fontSize: '0.8rem', display: 'block', marginBottom: '0.4rem' }}>Technical Skills (Comma separated)</label>
+                        <input
+                            type="text"
+                            value={skillsInput}
+                            onChange={e => setSkillsInput(e.target.value)}
+                            placeholder="e.g. React, Node.js, Python, MongoDB"
+                            style={{
+                                width: '100%', padding: '0.75rem 1rem', boxSizing: 'border-box',
+                                backgroundColor: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 'var(--radius-md)', color: 'var(--text-primary)',
+                                fontSize: '0.95rem', outline: 'none',
+                            }}
+                        />
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={profileLoading} style={{ alignSelf: 'flex-start', padding: '0.6rem 1.5rem' }}>
+                        {profileLoading ? 'Saving...' : 'Save Profile'}
                     </button>
                 </form>
             </div>

@@ -20,7 +20,12 @@ const Login = () => {
             await login(username, password);
             navigate('/app');
         } catch (err) {
-            setError(err.response?.data?.error || 'Failed to login');
+            if (err.response?.status === 403 && err.response?.data?.isVerified === false) {
+                // Redirect user to verify email
+                navigate('/verify-email', { state: { email: err.response.data.email, fromLogin: true } });
+            } else {
+                setError(err.response?.data?.error || 'Failed to login');
+            }
         } finally {
             setLoading(false);
         }
@@ -45,7 +50,7 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
-                        <label className="form-label">Username</label>
+                        <label className="form-label">Email or Username</label>
                         <input
                             type="text"
                             className="form-control"
@@ -55,14 +60,18 @@ const Login = () => {
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label className="form-label">Password</label>
+                    <div className="form-group" style={{ position: 'relative' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
+                            <Link to="/forgot-password" style={{ color: 'var(--primary)', textDecoration: 'none', fontSize: '0.8rem' }}>Forgot password?</Link>
+                        </div>
                         <input
                             type="password"
                             className="form-control"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
+                            style={{ mt: '0.4rem' }}
                         />
                     </div>
 

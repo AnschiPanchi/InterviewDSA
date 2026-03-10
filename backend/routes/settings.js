@@ -4,13 +4,22 @@ import verifyToken from '../middleware/auth.js';
 
 const router = express.Router();
 
-// PUT /api/auth/settings — update username or password
+// PUT /api/auth/settings — update username or password or profile info
 router.put('/settings', verifyToken, async (req, res) => {
-    const { newUsername, currentPassword, newPassword } = req.body;
+    const { newUsername, currentPassword, newPassword, linkedin, github, skills, targetJob } = req.body;
 
     try {
         const user = await User.findById(req.userId);
         if (!user) return res.status(404).json({ error: 'User not found' });
+
+        // Update professional profile
+        if (linkedin !== undefined) user.linkedin = linkedin;
+        if (github !== undefined) user.github = github;
+        if (targetJob !== undefined) user.targetJob = targetJob;
+        if (skills !== undefined) {
+            // Ensure skills is an array of strings
+            user.skills = Array.isArray(skills) ? skills.map(s => String(s).trim()).filter(s => s) : [];
+        }
 
         // Change username
         if (newUsername && newUsername !== user.username) {
