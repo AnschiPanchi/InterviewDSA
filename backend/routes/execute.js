@@ -1,9 +1,38 @@
 import express from 'express';
 import axios from 'axios';
+import { virtualExecute } from '../utils/judgeAgent.js';
 
 const router = express.Router();
 
-const PISTON_API = 'https://emkc.org/api/v2/piston/execute';
+const EXECUTION_ENDPOINTS = (process.env.PISTON_API_URLS || 'https://emkc.org/api/v2/piston/execute,https://piston.rs/api/v2/execute')
+    .split(',')
+    .map(url => url.trim())
+    .filter(Boolean);
+
+const shouldUseVirtualFallback = (statusCode) => {
+    if (!statusCode) return true;
+    return [400, 401, 403, 404, 408, 409, 413, 415, 422, 429, 500, 502, 503, 504].includes(statusCode);
+};
+
+const executeWithProvider = async (payload) => {
+    let lastError = null;
+
+    for (const endpoint of EXECUTION_ENDPOINTS) {
+        try {
+            const response = await axios.post(endpoint, payload, { timeout: 15000 });
+            return { endpoint, data: response.data };
+        } catch (error) {
+            lastError = error;
+            const statusCode = error?.response?.status;
+            if (!shouldUseVirtualFallback(statusCode)) {
+                throw error;
+            }
+            console.warn(`Execution provider failed (${endpoint}): ${statusCode || error.code || error.message}`);
+        }
+    }
+
+    throw lastError || new Error('No execution providers configured');
+};
 
 const VERSIONS = {
     javascript: '18.15.0',
@@ -104,13 +133,13 @@ router.post('/', async (req, res) => {
         const runnerCode = generateRunnerCode(code, langKey, testCases);
         const pistonLang = langKey === 'cpp' ? 'cpp' : langKey;
 
-        const response = await axios.post(PISTON_API, {
+        const { data } = await executeWithProvider({
             language: pistonLang,
             version: VERSIONS[langKey],
             files: [{ content: runnerCode }]
         });
 
-        const { run, compile } = response.data;
+        const { run, compile } = data;
 
         if (compile && compile.code !== 0) {
             return res.status(400).json({ error: compile.output || 'Compilation Error' });
@@ -136,11 +165,19 @@ router.post('/', async (req, res) => {
             }
         });
 
-        res.json({ stdout: userStdout, results });
+        res.json({ stdout: userStdout, results, executor: 'remote' });
 
     } catch (error) {
-        console.error("Execution error:", error);
-        res.status(500).json({ error: "Failed to execute code: " + (error.response?.data?.message || error.message) });
+        console.warn('Remote execution failed, trying virtual fallback:', error?.response?.status || error.message);
+        try {
+            const { code, language, testCases } = req.body;
+            console.log('Falling back to Virtual Execution Engine...');
+            const virtualResult = await virtualExecute(language, code, testCases);
+            res.json({ ...virtualResult, executor: 'virtual' });
+        } catch (vErr) {
+            console.error("VIRTUAL EXECUTION ERROR:", vErr.message);
+            res.status(500).json({ error: "Code execution failed: " + (vErr.message || "Unknown error") });
+        }
     }
 });
 

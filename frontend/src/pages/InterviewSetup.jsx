@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { Settings, CheckCircle2, Loader2, ListTree } from 'lucide-react';
 
 const InterviewSetup = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const [loading, setLoading] = useState(false);
+    
+    // Check for topic in URL query params
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const topicParam = params.get('topic');
+        if (topicParam) {
+            setFormData(prev => ({ ...prev, topic: topicParam }));
+        }
+    }, [location.search]);
+
     const [formData, setFormData] = useState({
         topic: 'Arrays and Strings',
         difficulty: 'Medium',

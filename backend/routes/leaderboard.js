@@ -1,10 +1,11 @@
 import express from 'express';
 import Attempt from '../models/Attempt.js';
+import optionalAuth from '../middleware/optionalAuth.js';
 
 const router = express.Router();
 
-// GET /api/leaderboard — top 20 users by average score (min 3 attempts)
-router.get('/', async (req, res) => {
+// GET /api/leaderboard — top 20 users by average score (min 1 attempt)
+router.get('/', optionalAuth, async (req, res) => {
     try {
         const leaderboard = await Attempt.aggregate([
             {
@@ -35,11 +36,20 @@ router.get('/', async (req, res) => {
                     bestScore: 1,
                     totalAttempts: 1,
                     totalTime: 1,
+                    duelWins: { $ifNull: ['$user.duelWins', 0] },
                 }
             }
         ]);
 
-        res.json(leaderboard);
+        // Add rank + flag current user
+        const currentUserId = req.userId ? String(req.userId) : null;
+        const ranked = leaderboard.map((entry, i) => ({
+            ...entry,
+            rank: i + 1,
+            isCurrentUser: currentUserId && String(entry._id) === currentUserId,
+        }));
+
+        res.json(ranked);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch leaderboard' });

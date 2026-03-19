@@ -1,0 +1,1156 @@
+﻿[dotenv@17.3.1] injecting env (4) from .env -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (0) from .env -- tip: ≡ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+MongoDB Connected: ac-zqjjq58-shard-00-00.xkrji6y.mongodb.net
+Server is running on port 5000
+node : Execution 
+error: AxiosError: 
+Request failed with 
+status code 401
+At line:1 char:7
++ ='*'; node server.js 
+2>&1 | Out-File 
+-FilePath 
+verbose_error.txt -Enc 
+...
++       
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo     
+         : 
+NotSpecified: (Exe    
+cution error...status  
+   code 401:String) 
+[], R    emoteException
+    + 
+FullyQualifiedErrorI   
+ d : NativeCommandError
+ 
+    at settle (file:///
+E:/coding/Project%203/b
+ackend/node_modules/axi
+os/lib/core/settle.js:2
+0:7)
+    at IncomingMessage.
+handleStreamEnd (file:/
+//E:/coding/Project%203
+/backend/node_modules/a
+xios/lib/adapters/http.
+js:844:13)
+    at 
+IncomingMessage.emit 
+(node:events:520:35)
+    at endReadableNT (n
+ode:internal/streams/re
+adable:1729:12)
+    at process.processT
+icksAndRejections (node
+:internal/process/task_
+queues:90:21)
+    at Axios.request (f
+ile:///E:/coding/Projec
+t%203/backend/node_modu
+les/axios/lib/core/Axio
+s.js:46:41)
+    at process.processT
+icksAndRejections (node
+:internal/process/task_
+queues:104:5)
+    at async file:///E:
+/coding/Project%203/bac
+kend/routes/execute.js:
+107:26 {
+  isAxiosError: true,
+  code: 
+'ERR_BAD_REQUEST',
+  config: {
+    transitional: {
+      
+silentJSONParsing: 
+true,
+      
+forcedJSONParsing: 
+true,
+      
+clarifyTimeoutError: 
+false,
+      legacyInterceptor
+ReqResOrdering: true
+    },
+    adapter: [ 'xhr', 
+'http', 'fetch' ],
+    transformRequest: 
+[ [Function: 
+transformRequest] ],
+    transformResponse: 
+[ [Function: 
+transformResponse] ],
+    timeout: 0,
+    xsrfCookieName: 
+'XSRF-TOKEN',
+    xsrfHeaderName: 
+'X-XSRF-TOKEN',
+    maxContentLength: 
+-1,
+    maxBodyLength: -1,
+    env: { FormData: 
+[Function], Blob: 
+[class Blob] },
+    validateStatus: 
+[Function: 
+validateStatus],
+    headers: Object 
+[AxiosHeaders] {
+      Accept: 
+'application/json, 
+text/plain, */*',
+      'Content-Type': 
+'application/json',
+      'User-Agent': 
+'axios/1.13.6',
+      
+'Content-Length': 
+'2772',
+      
+'Accept-Encoding': 
+'gzip, compress, 
+deflate, br'
+    },
+    method: 'post',
+    url: 'https://emkc.
+org/api/v2/piston/execu
+te',
+    data: '{"language":
+"cpp","version":"10.2.0
+","files":[{"content":"
+#include 
+<iostream>\\n#include 
+<string>\\n#include 
+<vector>\\n#include 
+<map>\\n#include 
+<algorithm>\\n\\nusing 
+namespace 
+std;\\n\\nclass 
+Solution 
+{\\npublic:\\n    int 
+solve(vector<int>& 
+arr) {\\n        // 
+your code here\\n      
+  return 2;\\n    
+}\\n};\\n\\nint main() 
+{\\n    Solution 
+sol;\\n    std::cout 
+<< \\"___TEST_RESULTS__
+_\\\\n\\";\\n\\n    
+try {\\n        auto 
+actual = sol.solve([4, 
+3, 1, 2]);\\n        
+auto expected = 2;\\n  
+      std::cout << \\"{
+\\\\\\"status\\\\\\": 
+\\\\\\"\\" << (actual 
+== expected ? 
+\\"Pass\\" : 
+\\"Fail\\") << 
+\\"\\\\\\", 
+\\\\\\"actual\\\\\\": 
+\\\\\\"\\" << actual 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": 
+\\\\\\"\\" << expected 
+<< \\"\\\\\\"}\\\\n\\";
+\\n    } catch(const 
+std::exception& e) 
+{\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": 
+\\\\\\"Error\\\\\\", 
+\\\\\\"error\\\\\\": 
+\\\\\\"\\" << e.what() 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": \\\\\\"
+2\\\\\\"}\\\\n\\";\\n  
+  }\\n\\n    try {\\n  
+      auto actual = 
+sol.solve([1, 2, 3, 
+4]);\\n        auto 
+expected = 0;\\n       
+ std::cout << \\"{\\\\\
+\"status\\\\\\": 
+\\\\\\"\\" << (actual 
+== expected ? 
+\\"Pass\\" : 
+\\"Fail\\") << 
+\\"\\\\\\", 
+\\\\\\"actual\\\\\\": 
+\\\\\\"\\" << actual 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": 
+\\\\\\"\\" << expected 
+<< \\"\\\\\\"}\\\\n\\";
+\\n    } catch(const 
+std::exception& e) 
+{\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": 
+\\\\\\"Error\\\\\\", 
+\\\\\\"error\\\\\\": 
+\\\\\\"\\" << e.what() 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": \\\\\\"
+0\\\\\\"}\\\\n\\";\\n  
+  }\\n\\n    try {\\n  
+      auto actual = 
+sol.solve([5, 4, 3, 2, 
+1]);\\n        auto 
+expected = 2;\\n       
+ std::cout << \\"{\\\\\
+\"status\\\\\\": 
+\\\\\\"\\" << (actual 
+== expected ? 
+\\"Pass\\" : 
+\\"Fail\\") << 
+\\"\\\\\\", 
+\\\\\\"actual\\\\\\": 
+\\\\\\"\\" << actual 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": 
+\\\\\\"\\" << expected 
+<< \\"\\\\\\"}\\\\n\\";
+\\n    } catch(const 
+std::exception& e) 
+{\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": 
+\\\\\\"Error\\\\\\", 
+\\\\\\"error\\\\\\": 
+\\\\\\"\\" << e.what() 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": \\\\\\"
+2\\\\\\"}\\\\n\\";\\n  
+  }\\n\\n    try {\\n  
+      auto actual = 
+sol.solve([2, 1]);\\n  
+      auto expected = 
+1;\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": \\\\\\"\\" << 
+(actual == expected ? 
+\\"Pass\\" : 
+\\"Fail\\") << 
+\\"\\\\\\", 
+\\\\\\"actual\\\\\\": 
+\\\\\\"\\" << actual 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": 
+\\\\\\"\\" << expected 
+<< \\"\\\\\\"}\\\\n\\";
+\\n    } catch(const 
+std::exception& e) 
+{\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": 
+\\\\\\"Error\\\\\\", 
+\\\\\\"error\\\\\\": 
+\\\\\\"\\" << e.what() 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": \\\\\\"
+1\\\\\\"}\\\\n\\";\\n  
+  }\\n\\n    try {\\n  
+      auto actual = 
+sol.solve([1, 1, 1, 
+1]);\\n        auto 
+expected = 0;\\n       
+ std::cout << \\"{\\\\\
+\"status\\\\\\": 
+\\\\\\"\\" << (actual 
+== expected ? 
+\\"Pass\\" : 
+\\"Fail\\") << 
+\\"\\\\\\", 
+\\\\\\"actual\\\\\\": 
+\\\\\\"\\" << actual 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": 
+\\\\\\"\\" << expected 
+<< \\"\\\\\\"}\\\\n\\";
+\\n    } catch(const 
+std::exception& e) 
+{\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": 
+\\\\\\"Error\\\\\\", 
+\\\\\\"error\\\\\\": 
+\\\\\\"\\" << e.what() 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": \\\\\\"
+0\\\\\\"}\\\\n\\";\\n  
+  }\\n    return 
+0;\\n}"}]}',
+    allowAbsoluteUrls: 
+true
+  },
+  request: <ref *1> 
+ClientRequest {
+    _events: [Object: 
+null prototype] {
+      abort: [Function 
+(anonymous)],
+      aborted: 
+[Function (anonymous)],
+      connect: 
+[Function (anonymous)],
+      error: [Function 
+(anonymous)],
+      socket: 
+[Function (anonymous)],
+      timeout: 
+[Function (anonymous)],
+      finish: 
+[Function: 
+requestOnFinish]
+    },
+    _eventsCount: 7,
+    _maxListeners: 
+undefined,
+    outputData: [],
+    outputSize: 0,
+    writable: true,
+    destroyed: true,
+    _last: false,
+    chunkedEncoding: 
+false,
+    shouldKeepAlive: 
+true,
+    maxRequestsOnConnec
+tionReached: false,
+    _defaultKeepAlive: 
+true,
+    useChunkedEncodingB
+yDefault: true,
+    sendDate: false,
+    
+_removedConnection: 
+false,
+    _removedContLen: 
+false,
+    _removedTE: false,
+    
+strictContentLength: 
+false,
+    _contentLength: 
+2772,
+    _hasBody: true,
+    _trailer: '',
+    finished: true,
+    _headerSent: true,
+    _closed: true,
+    _header: 'POST 
+/api/v2/piston/execute 
+HTTP/1.1\r\n' +
+      'Accept: 
+application/json, 
+text/plain, */*\r\n' +
+      'Content-Type: 
+application/json\r\n' +
+      'User-Agent: 
+axios/1.13.6\r\n' +
+      'Content-Length: 
+2772\r\n' +
+      
+'Accept-Encoding: 
+gzip, compress, 
+deflate, br\r\n' +
+      'Host: 
+emkc.org\r\n' +
+      'Connection: 
+keep-alive\r\n' +
+      '\r\n',
+    _keepAliveTimeout: 
+0,
+    _onPendingData: 
+[Function: nop],
+    agent: Agent {
+      _events: 
+[Object: null 
+prototype],
+      _eventsCount: 2,
+      _maxListeners: 
+undefined,
+      options: 
+[Object: null 
+prototype],
+      defaultPort: 443,
+      protocol: 
+'https:',
+      requests: 
+[Object: null 
+prototype] {},
+      sockets: 
+[Object: null 
+prototype] {},
+      freeSockets: 
+[Object: null 
+prototype],
+      keepAliveMsecs: 
+1000,
+      keepAlive: true,
+      maxSockets: 
+Infinity,
+      maxFreeSockets: 
+256,
+      scheduling: 
+'lifo',
+      maxTotalSockets: 
+Infinity,
+      
+totalSocketCount: 1,
+      agentKeepAliveTim
+eoutBuffer: 1000,
+      
+maxCachedSessions: 100,
+      _sessionCache: 
+[Object],
+      
+Symbol(shapeMode): 
+false,
+      
+Symbol(kCapture): false
+    },
+    socketPath: 
+undefined,
+    method: 'POST',
+    maxHeaderSize: 
+undefined,
+    
+insecureHTTPParser: 
+undefined,
+    
+joinDuplicateHeaders: 
+undefined,
+    path: '/api/v2/pist
+on/execute',
+    _ended: true,
+    res: 
+IncomingMessage {
+      _events: 
+[Object],
+      _readableState: 
+[ReadableState],
+      _maxListeners: 
+undefined,
+      socket: null,
+      
+httpVersionMajor: 1,
+      
+httpVersionMinor: 1,
+      httpVersion: 
+'1.1',
+      complete: true,
+      rawHeaders: 
+[Array],
+      rawTrailers: [],
+      
+joinDuplicateHeaders: 
+undefined,
+      aborted: false,
+      upgrade: false,
+      url: '',
+      method: null,
+      statusCode: 401,
+      statusMessage: 
+'Unauthorized',
+      client: 
+[TLSSocket],
+      _consuming: 
+false,
+      _dumped: false,
+      req: [Circular 
+*1],
+      _eventsCount: 4,
+      responseUrl: 'htt
+ps://emkc.org/api/v2/pi
+ston/execute',
+      redirects: [],
+      
+Symbol(shapeMode): 
+true,
+      
+Symbol(kCapture): 
+false,
+      
+Symbol(kHeaders): 
+[Object],
+      
+Symbol(kHeadersCount): 
+26,
+      
+Symbol(kTrailers): 
+null,
+      Symbol(kTrailersC
+ount): 0
+    },
+    aborted: false,
+    timeoutCb: null,
+    upgradeOrConnect: 
+false,
+    parser: null,
+    maxHeadersCount: 
+null,
+    reusedSocket: 
+false,
+    host: 'emkc.org',
+    protocol: 'https:',
+    _redirectable: 
+Writable {
+      _events: 
+[Object],
+      _writableState: 
+[WritableState],
+      _maxListeners: 
+undefined,
+      _options: 
+[Object],
+      _ended: true,
+      _ending: true,
+      _redirectCount: 
+0,
+      _redirects: [],
+      
+_requestBodyLength: 
+2772,
+      
+_requestBodyBuffers: 
+[],
+      _eventsCount: 3,
+      
+_onNativeResponse: 
+[Function (anonymous)],
+      _currentRequest: 
+[Circular *1],
+      _currentUrl: 'htt
+ps://emkc.org/api/v2/pi
+ston/execute',
+      _timeout: null,
+      
+Symbol(shapeMode): 
+true,
+      
+Symbol(kCapture): false
+    },
+    Symbol(shapeMode): 
+false,
+    Symbol(kCapture): 
+false,
+    
+Symbol(kBytesWritten): 
+0,
+    
+Symbol(kNeedDrain): 
+false,
+    Symbol(corked): 0,
+    Symbol(kChunkedBuff
+er): [],
+    Symbol(kChunkedLeng
+th): 0,
+    Symbol(kSocket): 
+TLSSocket {
+      _tlsOptions: 
+[Object],
+      
+_secureEstablished: 
+true,
+      _securePending: 
+false,
+      
+_newSessionPending: 
+false,
+      
+_controlReleased: true,
+      
+secureConnecting: 
+false,
+      _SNICallback: 
+null,
+      servername: 
+'emkc.org',
+      alpnProtocol: 
+false,
+      authorized: true,
+      
+authorizationError: 
+null,
+      encrypted: true,
+      _events: 
+[Object: null 
+prototype],
+      _eventsCount: 9,
+      connecting: 
+false,
+      _hadError: false,
+      _parent: null,
+      _host: 
+'emkc.org',
+      _closeAfterHandli
+ngError: false,
+      _readableState: 
+[ReadableState],
+      _writableState: 
+[WritableState],
+      allowHalfOpen: 
+false,
+      _maxListeners: 
+undefined,
+      _sockname: null,
+      _pendingData: 
+null,
+      
+_pendingEncoding: '',
+      server: 
+undefined,
+      _server: null,
+      ssl: [TLSWrap],
+      _requestCert: 
+true,
+      
+_rejectUnauthorized: 
+true,
+      timeout: 5000,
+      parser: null,
+      _httpMessage: 
+null,
+      
+Symbol(alpncallback): 
+null,
+      Symbol(res): 
+[TLSWrap],
+      
+Symbol(verified): true,
+      Symbol(pendingSes
+sion): null,
+      Symbol(async_id_s
+ymbol): -1,
+      Symbol(kHandle): 
+[TLSWrap],
+      Symbol(lastWriteQ
+ueueSize): 0,
+      Symbol(timeout): 
+Timeout {
+        _idleTimeout: 
+5000,
+        _idlePrev: 
+[TimersList],
+        _idleNext: 
+[TimersList],
+        _idleStart: 
+463544,
+        _onTimeout: 
+[Function: bound ],
+        _timerArgs: 
+undefined,
+        _repeat: null,
+        _destroyed: 
+false,
+        Symbol(refed): 
+false,
+        
+Symbol(kHasPrimitive): 
+false,
+        
+Symbol(asyncId): 15216,
+        
+Symbol(triggerId): 
+15214,
+        Symbol(kAsyncCo
+ntextFrame): undefined
+      },
+      Symbol(kBuffer): 
+null,
+      
+Symbol(kBufferCb): 
+null,
+      
+Symbol(kBufferGen): 
+null,
+      
+Symbol(shapeMode): 
+true,
+      
+Symbol(kCapture): 
+false,
+      
+Symbol(kSetNoDelay): 
+false,
+      
+Symbol(kSetKeepAlive): 
+true,
+      Symbol(kSetKeepAl
+iveInitialDelay): 1,
+      
+Symbol(kBytesRead): 0,
+      
+Symbol(kBytesWritten): 
+0,
+      Symbol(connect-op
+tions): [Object]
+    },
+    
+Symbol(kOutHeaders): 
+[Object: null 
+prototype] {
+      accept: [Array],
+      'content-type': 
+[Array],
+      'user-agent': 
+[Array],
+      
+'content-length': 
+[Array],
+      
+'accept-encoding': 
+[Array],
+      host: [Array]
+    },
+    Symbol(errored): 
+null,
+    Symbol(kHighWaterMa
+rk): 16384,
+    Symbol(kRejectNonSt
+andardBodyWrites): 
+false,
+    Symbol(kUniqueHeade
+rs): null
+  },
+  response: {
+    status: 401,
+    statusText: 
+'Unauthorized',
+    headers: Object 
+[AxiosHeaders] {
+      server: 
+'nginx/1.29.5',
+      date: 'Thu, 19 
+Mar 2026 16:45:15 GMT',
+      'content-type': 
+'application/json; 
+charset=utf-8',
+      
+'content-length': 
+'182',
+      connection: 
+'keep-alive',
+      
+'x-frame-options': 
+'SAMEORIGIN',
+      vary: 'X-HTTP-Met
+hod-Override, 
+Accept-Encoding',
+      'access-control-a
+llow-origin': '*',
+      'access-control-a
+llow-credentials': '',
+      'access-control-a
+llow-methods': '',
+      'access-control-a
+llow-headers': '*',
+      'access-control-e
+xpose-headers': '',
+      etag: 'W/"b6-QqqH
+YCERGsT108WQQZeCHw"'
+    },
+    config: {
+      transitional: 
+[Object],
+      adapter: [Array],
+      
+transformRequest: 
+[Array],
+      
+transformResponse: 
+[Array],
+      timeout: 0,
+      xsrfCookieName: 
+'XSRF-TOKEN',
+      xsrfHeaderName: 
+'X-XSRF-TOKEN',
+      
+maxContentLength: -1,
+      maxBodyLength: 
+-1,
+      env: [Object],
+      validateStatus: 
+[Function: 
+validateStatus],
+      headers: [Object 
+[AxiosHeaders]],
+      method: 'post',
+      url: 'https://emk
+c.org/api/v2/piston/exe
+cute',
+      data: '{"language
+":"cpp","version":"10.2
+.0","files":[{"content"
+:"#include 
+<iostream>\\n#include 
+<string>\\n#include 
+<vector>\\n#include 
+<map>\\n#include 
+<algorithm>\\n\\nusing 
+namespace 
+std;\\n\\nclass 
+Solution 
+{\\npublic:\\n    int 
+solve(vector<int>& 
+arr) {\\n        // 
+your code here\\n      
+  return 2;\\n    
+}\\n};\\n\\nint main() 
+{\\n    Solution 
+sol;\\n    std::cout 
+<< \\"___TEST_RESULTS__
+_\\\\n\\";\\n\\n    
+try {\\n        auto 
+actual = sol.solve([4, 
+3, 1, 2]);\\n        
+auto expected = 2;\\n  
+      std::cout << \\"{
+\\\\\\"status\\\\\\": 
+\\\\\\"\\" << (actual 
+== expected ? 
+\\"Pass\\" : 
+\\"Fail\\") << 
+\\"\\\\\\", 
+\\\\\\"actual\\\\\\": 
+\\\\\\"\\" << actual 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": 
+\\\\\\"\\" << expected 
+<< \\"\\\\\\"}\\\\n\\";
+\\n    } catch(const 
+std::exception& e) 
+{\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": 
+\\\\\\"Error\\\\\\", 
+\\\\\\"error\\\\\\": 
+\\\\\\"\\" << e.what() 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": \\\\\\"
+2\\\\\\"}\\\\n\\";\\n  
+  }\\n\\n    try {\\n  
+      auto actual = 
+sol.solve([1, 2, 3, 
+4]);\\n        auto 
+expected = 0;\\n       
+ std::cout << \\"{\\\\\
+\"status\\\\\\": 
+\\\\\\"\\" << (actual 
+== expected ? 
+\\"Pass\\" : 
+\\"Fail\\") << 
+\\"\\\\\\", 
+\\\\\\"actual\\\\\\": 
+\\\\\\"\\" << actual 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": 
+\\\\\\"\\" << expected 
+<< \\"\\\\\\"}\\\\n\\";
+\\n    } catch(const 
+std::exception& e) 
+{\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": 
+\\\\\\"Error\\\\\\", 
+\\\\\\"error\\\\\\": 
+\\\\\\"\\" << e.what() 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": \\\\\\"
+0\\\\\\"}\\\\n\\";\\n  
+  }\\n\\n    try {\\n  
+      auto actual = 
+sol.solve([5, 4, 3, 2, 
+1]);\\n        auto 
+expected = 2;\\n       
+ std::cout << \\"{\\\\\
+\"status\\\\\\": 
+\\\\\\"\\" << (actual 
+== expected ? 
+\\"Pass\\" : 
+\\"Fail\\") << 
+\\"\\\\\\", 
+\\\\\\"actual\\\\\\": 
+\\\\\\"\\" << actual 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": 
+\\\\\\"\\" << expected 
+<< \\"\\\\\\"}\\\\n\\";
+\\n    } catch(const 
+std::exception& e) 
+{\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": 
+\\\\\\"Error\\\\\\", 
+\\\\\\"error\\\\\\": 
+\\\\\\"\\" << e.what() 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": \\\\\\"
+2\\\\\\"}\\\\n\\";\\n  
+  }\\n\\n    try {\\n  
+      auto actual = 
+sol.solve([2, 1]);\\n  
+      auto expected = 
+1;\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": \\\\\\"\\" << 
+(actual == expected ? 
+\\"Pass\\" : 
+\\"Fail\\") << 
+\\"\\\\\\", 
+\\\\\\"actual\\\\\\": 
+\\\\\\"\\" << actual 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": 
+\\\\\\"\\" << expected 
+<< \\"\\\\\\"}\\\\n\\";
+\\n    } catch(const 
+std::exception& e) 
+{\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": 
+\\\\\\"Error\\\\\\", 
+\\\\\\"error\\\\\\": 
+\\\\\\"\\" << e.what() 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": \\\\\\"
+1\\\\\\"}\\\\n\\";\\n  
+  }\\n\\n    try {\\n  
+      auto actual = 
+sol.solve([1, 1, 1, 
+1]);\\n        auto 
+expected = 0;\\n       
+ std::cout << \\"{\\\\\
+\"status\\\\\\": 
+\\\\\\"\\" << (actual 
+== expected ? 
+\\"Pass\\" : 
+\\"Fail\\") << 
+\\"\\\\\\", 
+\\\\\\"actual\\\\\\": 
+\\\\\\"\\" << actual 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": 
+\\\\\\"\\" << expected 
+<< \\"\\\\\\"}\\\\n\\";
+\\n    } catch(const 
+std::exception& e) 
+{\\n        std::cout 
+<< \\"{\\\\\\"status\\\
+\\\": 
+\\\\\\"Error\\\\\\", 
+\\\\\\"error\\\\\\": 
+\\\\\\"\\" << e.what() 
+<< \\"\\\\\\", \\\\\\"e
+xpected\\\\\\": \\\\\\"
+0\\\\\\"}\\\\n\\";\\n  
+  }\\n    return 
+0;\\n}"}]}',
+      
+allowAbsoluteUrls: true
+    },
+    request: <ref *1> 
+ClientRequest {
+      _events: 
+[Object: null 
+prototype],
+      _eventsCount: 7,
+      _maxListeners: 
+undefined,
+      outputData: [],
+      outputSize: 0,
+      writable: true,
+      destroyed: true,
+      _last: false,
+      chunkedEncoding: 
+false,
+      shouldKeepAlive: 
+true,
+      maxRequestsOnConn
+ectionReached: false,
+      
+_defaultKeepAlive: 
+true,
+      useChunkedEncodin
+gByDefault: true,
+      sendDate: false,
+      
+_removedConnection: 
+false,
+      _removedContLen: 
+false,
+      _removedTE: 
+false,
+      
+strictContentLength: 
+false,
+      _contentLength: 
+2772,
+      _hasBody: true,
+      _trailer: '',
+      finished: true,
+      _headerSent: 
+true,
+      _closed: true,
+      _header: 'POST 
+/api/v2/piston/execute 
+HTTP/1.1\r\n' +
+        'Accept: 
+application/json, 
+text/plain, */*\r\n' +
+        'Content-Type: 
+application/json\r\n' +
+        'User-Agent: 
+axios/1.13.6\r\n' +
+        
+'Content-Length: 
+2772\r\n' +
+        
+'Accept-Encoding: 
+gzip, compress, 
+deflate, br\r\n' +
+        'Host: 
+emkc.org\r\n' +
+        'Connection: 
+keep-alive\r\n' +
+        '\r\n',
+      
+_keepAliveTimeout: 0,
+      _onPendingData: 
+[Function: nop],
+      agent: [Agent],
+      socketPath: 
+undefined,
+      method: 'POST',
+      maxHeaderSize: 
+undefined,
+      
+insecureHTTPParser: 
+undefined,
+      
+joinDuplicateHeaders: 
+undefined,
+      path: '/api/v2/pi
+ston/execute',
+      _ended: true,
+      res: 
+[IncomingMessage],
+      aborted: false,
+      timeoutCb: null,
+      
+upgradeOrConnect: 
+false,
+      parser: null,
+      maxHeadersCount: 
+null,
+      reusedSocket: 
+false,
+      host: 'emkc.org',
+      protocol: 
+'https:',
+      _redirectable: 
+[Writable],
+      
+Symbol(shapeMode): 
+false,
+      
+Symbol(kCapture): 
+false,
+      
+Symbol(kBytesWritten): 
+0,
+      
+Symbol(kNeedDrain): 
+false,
+      Symbol(corked): 
+0,
+      Symbol(kChunkedBu
+ffer): [],
+      Symbol(kChunkedLe
+ngth): 0,
+      Symbol(kSocket): 
+[TLSSocket],
+      
+Symbol(kOutHeaders): 
+[Object: null 
+prototype],
+      Symbol(errored): 
+null,
+      Symbol(kHighWater
+Mark): 16384,
+      Symbol(kRejectNon
+StandardBodyWrites): 
+false,
+      Symbol(kUniqueHea
+ders): null
+    },
+    data: {
+      message: 'Public 
+Piston API is now 
+whitelist only as of 
+2/15/2026. Please 
+contact EngineerMan on 
+Discord with use case 
+justification or 
+consider hosting your 
+own Piston instance.'
+    }
+  },
+  status: 401
+}
+Registration attempt: {
+  username: 'testuser123',
+  email: 'testuser123@example.com',
+  password: 'password123',
+  captchaQuestion: '7 + 4',
+  captchaAnswer: '11'
+}
+User connected to Duel: KeYP4qVPzjvQa-U_AAAC
+User connected to Duel: WJXp-KlQp-R9osziAAAF
+User disconnected
+(node:30424) 
+[MONGOOSE] Warning: 
+mongoose: the `new` 
+option for 
+`findOneAndUpdate()` 
+and 
+`findOneAndReplace()` 
+is deprecated. Use 
+`returnDocument: 
+'after'` instead.
+(Use `node 
+--trace-warnings ...` 
+to show where the 
+warning was created)
+User disconnected
+User connected to Duel: jwrL6D87wtMjLQLKAAAI
+(node:30424) 
+[MONGOOSE] Warning: 
+mongoose: the `new` 
+option for 
+`findOneAndUpdate()` 
+and 
+`findOneAndReplace()` 
+is deprecated. Use 
+`returnDocument: 
+'after'` instead.
+(node:30424) 
+[MONGOOSE] Warning: 
+mongoose: the `new` 
+option for 
+`findOneAndUpdate()` 
+and 
+`findOneAndReplace()` 
+is deprecated. Use 
+`returnDocument: 
+'after'` instead.
+User connected to Duel: oX_JVdfc_8sw5_rHAAAL
+User disconnected
+User disconnected

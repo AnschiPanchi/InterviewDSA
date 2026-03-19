@@ -13,7 +13,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@google/genai": "^1.43.0",
+    "@google/generative-ai": "^0.13.0",
     "axios": "^1.13.6",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
@@ -22,8 +22,11 @@
     "gcp-metadata": "^8.1.2",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.3",
+    "multer": "^2.1.1",
     "nodemailer": "^8.0.2",
     "openai": "^6.25.0",
+    "pdf-parse": "^2.4.5",
+    "socket.io": "^4.8.3",
     "sqlite3": "^5.1.7"
   }
 }

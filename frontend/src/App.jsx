@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Link, useLocation, NavLink } from 'react-router-dom';
 import { useContext, useState, useEffect } from 'react';
 import { AuthProvider, AuthContext } from './context/AuthContext';
 import InterviewSetup from './pages/InterviewSetup';
@@ -10,147 +10,226 @@ import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import Leaderboard from './pages/Leaderboard';
 import Landing from './pages/Landing';
-
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import DuelRoom from './pages/DuelRoom';
+import TalentAnalytics from './pages/TalentAnalytics';
+import ForgeOnboarding from './pages/ForgeOnboarding';
+import JobMatchHub from './pages/JobMatchHub';
+import PracticeHub from './pages/PracticeHub';
+import CommunityQuests from './pages/CommunityQuests';
+import Achievements from './pages/Achievements';
+import QuizBattleRoom from './pages/QuizBattleRoom';
+import TopicStudy from './pages/TopicStudy';
+import AdaptiveQuiz from './pages/AdaptiveQuiz';
 import OnboardingModal, { shouldShowOnboarding } from './components/OnboardingModal';
-import { Loader2, LogOut, User, Sun, Moon, Settings as SettingsIcon, Trophy } from 'lucide-react';
+import {
+    Loader2, LogOut, Sun, Moon, Settings as SettingsIcon,
+    Trophy, LayoutDashboard, User, Swords, Radar, Briefcase, Flame,
+    Code2, Brain, Sparkles, ChevronDown
+} from 'lucide-react';
 
-// ── Theme helpers ─────────────────────────────────────────────────────────
 const getInitialTheme = () => localStorage.getItem('theme') || 'dark';
-
 const applyTheme = (theme) => {
-  document.body.classList.toggle('light', theme === 'light');
-  localStorage.setItem('theme', theme);
+    document.body.classList.toggle('light', theme === 'light');
+    localStorage.setItem('theme', theme);
 };
 
-// ── Route guard ───────────────────────────────────────────────────────────
 const ProtectedRoute = ({ children }) => {
-  const { user, loading } = useContext(AuthContext);
-  if (loading) return <div className="flex-center" style={{ height: '100vh' }}><Loader2 className="animate-spin" size={32} color="var(--primary)" /></div>;
-  if (!user) return <Navigate to="/login" replace />;
-  return children;
+    const { user, loading } = useContext(AuthContext);
+    if (loading) return (
+        <div className="flex-center" style={{ height: '100vh' }}>
+            <Loader2 className="animate-spin" size={32} color="var(--violet-light)" />
+        </div>
+    );
+    if (!user) return <Navigate to="/login" replace />;
+    return children;
 };
 
 const Navigation = ({ theme, toggleTheme }) => {
-  const { user, logout } = useContext(AuthContext);
-  const location = useLocation();
-  const isInterviewActive = location.pathname === '/interview';
+    const { user, logout } = useContext(AuthContext);
+    const location = useLocation();
+    const isInterviewActive = location.pathname === '/interview';
+    const [scrolled, setScrolled] = useState(false);
 
-  const handleLogoClick = (e) => {
-    if (isInterviewActive) {
-      e.preventDefault();
-      // We can dispatch a custom event that InterviewRoom listens for,
-      // or rely on the UI 'End Interview' button in the room
-      window.dispatchEvent(new CustomEvent('request-interview-exit'));
-    }
-  };
+    useEffect(() => {
+        const handler = () => setScrolled(window.scrollY > 8);
+        window.addEventListener('scroll', handler, { passive: true });
+        return () => window.removeEventListener('scroll', handler);
+    }, []);
 
-  return (
-    <header className="flex-between" style={{ marginBottom: '2rem' }}>
-      <div>
-        <Link to="/" onClick={handleLogoClick} style={{ textDecoration: 'none' }}>
-          <h1 className="text-gradient" style={{ fontSize: '1.5rem', margin: 0 }}>AlgoPrep AI</h1>
-          <p className="text-muted" style={{ fontSize: '0.875rem', margin: 0 }}>Your Mock Technical Interviewer</p>
-        </Link>
-      </div>
-      <nav style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-        {/* Dark/Light toggle */}
-        <button
-          onClick={toggleTheme}
-          className="btn"
-          title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          style={{
-            background: 'rgba(255,255,255,0.07)', color: 'var(--text-muted)',
-            padding: '0.5rem', borderRadius: 'var(--radius-md)',
-            border: '1px solid rgba(255,255,255,0.1)',
-          }}
-        >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
+    const handleLogoClick = (e) => {
+        if (isInterviewActive) {
+            e.preventDefault();
+            window.dispatchEvent(new CustomEvent('request-interview-exit'));
+        }
+    };
 
-        {user ? (
-          <>
-            <Link to="/app" className="btn btn-outline" style={{ textDecoration: 'none', border: 'none' }}>Dashboard</Link>
-            <Link to="/leaderboard" className="btn btn-outline" style={{ textDecoration: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-              <Trophy size={16} /> Rankings
-            </Link>
-            <Link to="/profile" className="btn btn-outline" style={{ textDecoration: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <User size={18} /> Profile
-            </Link>
-            <Link to="/settings" className="btn btn-outline" style={{ textDecoration: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <SettingsIcon size={18} />
-            </Link>
-            <Link to="/setup" className="btn btn-primary" style={{ textDecoration: 'none' }}>New Interview</Link>
-            <button onClick={logout} className="btn" style={{ background: 'transparent', color: 'var(--text-muted)' }} title="Logout">
-              <LogOut size={20} />
-            </button>
-          </>
-        ) : (
-          <>
-            <Link to="/login" className="btn btn-outline" style={{ textDecoration: 'none' }}>Log In</Link>
-            <Link to="/register" className="btn btn-primary" style={{ textDecoration: 'none' }}>Sign Up</Link>
-          </>
-        )}
-      </nav>
-    </header>
-  );
+    return (
+        <header className="navbar" style={scrolled ? { boxShadow: '0 4px 30px rgba(0,0,0,0.35)' } : {}}>
+            <div className="navbar-inner">
+                {/* Brand */}
+                <Link to="/" onClick={handleLogoClick} style={{ textDecoration: 'none' }} className="nav-brand">
+                    <h1 className="text-gradient" style={{ fontSize: '1.4rem', margin: 0, fontWeight: 800 }}>AlgoPrep AI</h1>
+                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)', margin: 0, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Career-Ready Platform</p>
+                </Link>
+
+                {/* Nav links */}
+                <nav className="nav-links">
+                    {/* Theme toggle */}
+                    <button
+                        onClick={toggleTheme}
+                        className="btn btn-ghost btn-icon"
+                        title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                        style={{ marginRight: '0.25rem' }}
+                    >
+                        {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
+                    </button>
+
+                    {user ? (
+                        <>
+                            <NavLink to="/app" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                                <LayoutDashboard size={15} /> Dashboard
+                            </NavLink>
+
+                            <div className="nav-dropdown">
+                                <button className="nav-dropdown-btn">
+                                    <Brain size={15} /> Practice <ChevronDown size={14} />
+                                </button>
+                                <div className="nav-dropdown-content">
+                                    <NavLink to="/community" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                                        <Sparkles size={15} /> System Quests
+                                    </NavLink>
+                                    <NavLink to="/battle" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                                        <Flame size={15} /> Quiz Battle
+                                    </NavLink>
+                                </div>
+                            </div>
+
+                            <div className="nav-dropdown">
+                                <button className="nav-dropdown-btn">
+                                    <Swords size={15} /> Compete <ChevronDown size={14} />
+                                </button>
+                                <div className="nav-dropdown-content">
+                                    <NavLink to="/duel" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                                        <Swords size={15} /> Code Duel
+                                    </NavLink>
+                                    <NavLink to="/leaderboard" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                                        <Trophy size={15} /> Rankings
+                                    </NavLink>
+                                </div>
+                            </div>
+
+                            <div className="nav-dropdown">
+                                <button className="nav-dropdown-btn">
+                                    <Briefcase size={15} /> Career <ChevronDown size={14} />
+                                </button>
+                                <div className="nav-dropdown-content">
+                                    <NavLink to="/talent" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                                        <Radar size={15} /> Analytics
+                                    </NavLink>
+                                    <NavLink to="/achievements" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                                        <Trophy size={15} /> Achievements
+                                    </NavLink>
+                                    <NavLink to="/practice" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                                        <Brain size={15} /> Practice Hub
+                                    </NavLink>
+                                    <NavLink to="/jobs" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                                        <Briefcase size={15} /> Jobs
+                                    </NavLink>
+                                    <NavLink to="/profile" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                                        <User size={15} /> Profile
+                                    </NavLink>
+                                </div>
+                            </div>
+                            <NavLink to="/settings" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                                <SettingsIcon size={15} />
+                            </NavLink>
+                            <Link to="/setup" className="btn btn-primary btn-sm" style={{ marginLeft: '0.5rem', textDecoration: 'none' }}>
+                                New Interview
+                            </Link>
+                            <button
+                                onClick={logout}
+                                className="btn btn-ghost btn-icon"
+                                title="Logout"
+                                style={{ marginLeft: '0.25rem', color: 'var(--danger)' }}
+                            >
+                                <LogOut size={17} />
+                            </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link to="/login" className="nav-link" style={{ textDecoration: 'none' }}>Log In</Link>
+                            <Link to="/register" className="btn btn-primary btn-sm" style={{ textDecoration: 'none', marginLeft: '0.25rem' }}>
+                                Get Started
+                            </Link>
+                        </>
+                    )}
+                </nav>
+            </div>
+        </header>
+    );
 };
 
-// ── Inner App ─────────────────────────────────────────────────────────────
 const AppContent = () => {
-  const { user, loading } = useContext(AuthContext);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [theme, setTheme] = useState(getInitialTheme);
+    const { user, loading } = useContext(AuthContext);
+    const [showOnboarding, setShowOnboarding] = useState(false);
+    const [theme, setTheme] = useState(getInitialTheme);
+    const location = useLocation();
+    const isFullscreen = ['/interview'].includes(location.pathname);
 
-  useEffect(() => { applyTheme(theme); }, [theme]);
+    useEffect(() => { applyTheme(theme); }, [theme]);
+    const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+    useEffect(() => {
+        if (!loading && user && shouldShowOnboarding()) setShowOnboarding(true);
+    }, [user, loading]);
 
-  useEffect(() => {
-    if (!loading && user && shouldShowOnboarding()) {
-      setShowOnboarding(true);
-    }
-  }, [user, loading]);
+    return (
+        <>
+            {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
+            {!isFullscreen && <Navigation theme={theme} toggleTheme={toggleTheme} />}
+            <div style={{ paddingTop: isFullscreen ? 0 : 'var(--nav-h)' }}>
+                <Routes>
+                    {/* Public */}
+                    <Route path="/" element={user && !loading ? <Navigate to="/app" replace /> : <Landing />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/register" element={<Register />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
 
-  return (
-    <>
-      {showOnboarding && <OnboardingModal onClose={() => setShowOnboarding(false)} />}
-      <div className="container">
-        <Navigation theme={theme} toggleTheme={toggleTheme} />
-        <main>
-          <Routes>
-            {/* Public */}
-            <Route path="/" element={user && !loading ? <Navigate to="/app" replace /> : <Landing />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-
-            {/* Protected */}
-            <Route path="/app" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/setup" element={<ProtectedRoute><InterviewSetup /></ProtectedRoute>} />
-            <Route path="/interview" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
-          </Routes>
-        </main>
-      </div>
-    </>
-  );
+                    {/* Protected */}
+                    <Route path="/app"      element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                    <Route path="/setup"    element={<ProtectedRoute><InterviewSetup /></ProtectedRoute>} />
+                    <Route path="/interview" element={<ProtectedRoute><InterviewRoom /></ProtectedRoute>} />
+                    <Route path="/profile"  element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                    <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+                    <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+                    <Route path="/duel"     element={<ProtectedRoute><DuelRoom /></ProtectedRoute>} />
+                    <Route path="/duel/:roomId" element={<ProtectedRoute><DuelRoom /></ProtectedRoute>} />
+                    <Route path="/talent"   element={<ProtectedRoute><TalentAnalytics /></ProtectedRoute>} />
+                    <Route path="/achievements" element={<ProtectedRoute><Achievements /></ProtectedRoute>} />
+                    <Route path="/forge"    element={<ProtectedRoute><ForgeOnboarding /></ProtectedRoute>} />
+                    <Route path="/jobs"     element={<ProtectedRoute><JobMatchHub /></ProtectedRoute>} />
+                    <Route path="/practice" element={<ProtectedRoute><PracticeHub /></ProtectedRoute>} />
+                    <Route path="/study"    element={<ProtectedRoute><TopicStudy /></ProtectedRoute>} />
+                    <Route path="/community" element={<ProtectedRoute><CommunityQuests /></ProtectedRoute>} />
+                    <Route path="/battle"   element={<ProtectedRoute><QuizBattleRoom /></ProtectedRoute>} />
+                    <Route path="/quiz"     element={<ProtectedRoute><AdaptiveQuiz /></ProtectedRoute>} />
+                </Routes>
+            </div>
+        </>
+    );
 };
 
-// ── Root ──────────────────────────────────────────────────────────────────
 function App() {
-  return (
-    <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
-    </AuthProvider>
-  );
+    return (
+        <AuthProvider>
+            <Router>
+                <AppContent />
+            </Router>
+        </AuthProvider>
+    );
 }
 
 export default App;

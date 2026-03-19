@@ -1,6 +1,9 @@
 import express from 'express';
 import OpenAI from 'openai';
 import Attempt from '../models/Attempt.js';
+import User from '../models/User.js';
+import verifyToken from '../middleware/auth.js';
+import { checkAchievements } from '../utils/achievementEngine.js';
 
 const router = express.Router();
 
@@ -91,11 +94,14 @@ Provide the response in the following JSON format ONLY:
     }
 });
 
-router.post('/review', async (req, res) => {
+router.post('/review', verifyToken, async (req, res) => {
     try {
         const ai = getAi();
         if (!ai) return res.status(503).json({ error: "AI API key not configured on server" });
         const { question, language, code, approach } = req.body;
+
+        const user = await User.findById(req.userId);
+        if (!user) return res.status(404).json({ error: "User not found" });
 
         const prompt = `You are a supportive but rigorous technical interviewer. 
 Review the following user submission for a DSA problem.
@@ -128,7 +134,26 @@ Provide your feedback in the following JSON format ONLY:
         });
 
         let reviewData = parseJSONResponse(response.choices[0].message.content);
-        res.json(reviewData);
+
+        // Persistent persistence: Save the interview attempt
+        const attempt = new Attempt({
+            userId: req.userId,
+            topic: question.topic || "General",
+            difficulty: question.difficulty || "Medium",
+            question: question.title,
+            code: code,
+            score: reviewData.score,
+            feedbackSummary: reviewData.feedback,
+            strengths: reviewData.strengths,
+            areasForImprovement: reviewData.areasForImprovement
+        });
+        await attempt.save();
+
+        // Check achievements: Specifically count total interviews
+        const interviewCount = await Attempt.countDocuments({ userId: req.userId });
+        const earned = await checkAchievements(user, { interviewsCount: interviewCount });
+
+        res.json({ ...reviewData, earnedAchievements: earned });
     } catch (error) {
         console.error("Error reviewing submission:", error);
         res.status(500).json({ error: "Failed to review submission: " + error.message, stack: error.stack });
@@ -214,17 +239,18 @@ Rules:
     }
 });
 
-router.post('/recommend-topic', async (req, res) => {
+router.post('/recommend-topic', verifyToken, async (req, res) => {
     try {
         const ai = getAi();
         if (!ai) return res.status(503).json({ error: "AI API key not configured on server" });
-        const { skills, targetJob, userId } = req.body;
+        const { skills, targetJob } = req.body;
+        const userId = req.userId;
 
         // Fetch user attempts to find weak topics
         let weakTopicsContext = "";
         try {
             if (userId) {
-                const attempts = await Attempt.find({ user: userId });
+                const attempts = await Attempt.find({ userId: userId });
                 if (attempts.length > 0) {
                     const topicMap = {};
                     attempts.forEach(a => {
@@ -281,7 +307,7 @@ Provide the response in the following JSON format ONLY, without any markdown for
     }
 });
 
-router.post('/job-skills', async (req, res) => {
+router.post('/job-skills', verifyToken, async (req, res) => {
     try {
         const ai = getAi();
         if (!ai) return res.status(503).json({ error: "AI API key not configured on server" });
@@ -322,6 +348,48 @@ Provide the response in the following JSON format ONLY, without any markdown for
     } catch (error) {
         console.error("Error generating skill gap:", error);
         res.status(500).json({ error: "Failed to generate skill gap analysis: " + error.message });
+    }
+});
+
+router.post('/study-guide', async (req, res) => {
+    try {
+        const ai = getAi();
+        if (!ai) return res.status(503).json({ error: "AI API key not configured on server" });
+        const { topic } = req.body;
+
+        const prompt = `You are an expert technical coach. Create a comprehensive, concise study guide for the topic: "${topic}".
+        Include:
+        1. A "cheatSheet" (3-5 key concepts with brief explanations).
+        2. "interviewQuestions" (3 common conceptual questions and short answers).
+        3. A "microChallenge" (A 5-10 line code snippet with a logical BUG that the user must find/fix. Provide "snippet", "hint", and "solution").
+
+        Provide the response in the following JSON format ONLY:
+        {
+          "topic": "${topic}",
+          "cheatSheet": [
+            { "concept": "...", "explanation": "..." }
+          ],
+          "interviewQuestions": [
+            { "question": "...", "answer": "..." }
+          ],
+          "microChallenge": {
+            "snippet": "...",
+            "hint": "...",
+            "solution": "..."
+          }
+        }`;
+
+        const response = await ai.chat.completions.create({
+            model: getModel(),
+            messages: [{ role: "system", content: prompt }],
+            response_format: { type: "json_object" }
+        });
+
+        let data = parseJSONResponse(response.choices[0].message.content);
+        res.json(data);
+    } catch (error) {
+        console.error("Error generating study guide:", error);
+        res.status(500).json({ error: "Failed to generate study guide: " + error.message });
     }
 });
 

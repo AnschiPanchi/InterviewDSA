@@ -101,12 +101,13 @@ const InterviewRoom = () => {
         const timeSpent = totalTime - timeLeft;
 
         try {
+            const token = localStorage.getItem('token');
             const reviewRes = await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/ai/review`, {
                 question,
                 language,
                 code,
                 approach
-            });
+            }, { headers: { Authorization: `Bearer ${token}` } });
             const reviewData = reviewRes.data;
             const hintPenalty = hints.length * HINT_PENALTY;
             const finalScore = Math.max(0, reviewData.score - hintPenalty);
@@ -115,7 +116,6 @@ const InterviewRoom = () => {
             setFeedback(reviewData);
             sessionStorage.removeItem(SESSION_KEY);
 
-            const token = localStorage.getItem('token');
             await axios.post(`${import.meta.env.VITE_API_BASE_URL}/api/performance/save`, {
                 topic: setup?.topic || 'General',
                 difficulty: setup?.difficulty || 'Medium',
@@ -326,7 +326,7 @@ const InterviewRoom = () => {
                             </>
                         ) : (
                             /* AI Feedback View */
-                            <div className="glass-panel prose slide-up" style={{ padding: '1.5rem', flex: 1, border: '1px solid var(--primary)', overflowWrap: 'break-word', wordBreak: 'break-word' }}>
+                            <div className="glass-panel prose slide-up" style={{ padding: '1.5rem', flex: 1, border: '1px solid var(--primary)', overflowWrap: 'break-word', wordBreak: 'break-word', overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
                                 <div className="flex-between" style={{ borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem', marginBottom: '1rem' }}>
                                     <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                         <Sparkles size={20} /> AI Interviewer Feedback
@@ -360,7 +360,7 @@ const InterviewRoom = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex-between" style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: 'var(--radius-md)' }}>
+                                <div className="flex-between" style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: 'var(--radius-md)', marginBottom: 'auto' }}>
                                     <div>
                                         <span className="text-muted">Time Complexity:</span> <strong style={{ color: 'var(--primary)' }}>{feedback.timeComplexity}</strong>
                                     </div>
@@ -369,13 +369,15 @@ const InterviewRoom = () => {
                                     </div>
                                 </div>
 
-                                <button
-                                    onClick={() => navigate('/')}
-                                    className="btn btn-primary"
-                                    style={{ width: '100%', marginTop: '2rem' }}
-                                >
-                                    Return to Dashboard
-                                </button>
+                                <div style={{ position: 'sticky', bottom: 0, paddingTop: '1.5rem', marginTop: '1.5rem', backgroundColor: 'var(--bg-elevated)', borderTop: '1px solid rgba(255,255,255,0.1)', zIndex: 10 }}>
+                                    <button
+                                        onClick={() => navigate('/app')}
+                                        className="btn btn-primary"
+                                        style={{ width: '100%' }}
+                                    >
+                                        ← Return to Dashboard
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>
